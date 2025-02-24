@@ -18,7 +18,7 @@ public class JwtTokenUtils {
 	private String secretKeyString;
 	
 	public String generateAccessTokens(String username, List<String> roles) {
-		Date expirationDate = new Date(System.currentTimeMillis() + 1 * 24 * 3600 * 1000);
+		Date expirationDate = new Date(System.currentTimeMillis() + 24 * 3600 * 1000);
 		SecretKey key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKeyString));
 		return Jwts.builder()
 				.subject(username)
@@ -46,10 +46,10 @@ public class JwtTokenUtils {
 			SecretKey key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKeyString));
 			Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
 			isVerify = true;
+			System.out.println("verify: true");
 		} catch (Exception e) {
-			isVerify = false;
+			System.out.println("verify: false! Error: " + e.getMessage());
 		}
-		System.out.println("Verify: " + isVerify);
 		return isVerify;
 	}
 	

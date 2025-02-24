@@ -29,6 +29,7 @@ public class ConversationMapper {
         Set<ConversationMember> memberSet = conversation.getMembers();
         Set<MemberDto> memberDtoList = new HashSet<>();
         Users usersOther = null; boolean check = true;
+        boolean userOtherOnline = false;
         for (ConversationMember member : memberSet){
             Users users = member.getUsers();
             MemberDto dto = new MemberDto();
@@ -41,6 +42,7 @@ public class ConversationMapper {
             if(check && !users.getId().equals(userId)){
                 check = false;
                 usersOther = users;
+                userOtherOnline = dto.getOnline();
             }
         }
         if(conversation.getType()==Conversation.ConversationType.PRIVATE){
@@ -54,6 +56,8 @@ public class ConversationMapper {
                     .unreadMessageCount(0)
                     .active(conversation.getActive())
                     .memberList(memberDtoList)
+                    .type(conversation.getType())
+                    .online(userOtherOnline)
                     .build();
         } else{
             return ConversationDto.builder()
@@ -64,13 +68,14 @@ public class ConversationMapper {
                             TimeMapperUtils.localDateTimeToHouseString(conversation.getSendLastAt()) : null)
                     .lastMessage(conversation.getLatestMessage())
                     .unreadMessageCount(0)
+                    .online(userOtherOnline)
                     .active(conversation.getActive())
                     .memberList(memberDtoList)
                     .build();
         }
     }
 
-    public MessageDto entityToMessageDto(Message message){
+    public MessageDto entityToMessageDto(Message message, String userCode){
         Message parentMessage = message.getParentMessage();
         if(parentMessage!=null){
             MessageDto reply = new MessageDto();
@@ -81,23 +86,27 @@ public class ConversationMapper {
             reply.setId(parentMessage.getId());
             reply.setUserCodeSend(parentMessage.getSenderUsers().getUserCode());
             reply.setUserAvatarSend(parentMessage.getSenderUsers().getAvatar());
+            String senderUserCode = message.getSenderUsers().getUserCode();
             return MessageDto.builder()
                     .id(message.getId())
                     .content(message.getContent())
                     .imageUrl(message.getMediaUrl())
                     .replyOf(reply)
-                    .userCodeSend(message.getSenderUsers().getUserCode())
+                    .userCodeSend(senderUserCode)
+                    .isMyMessage(userCode.equals(senderUserCode))
                     .userAvatarSend(message.getSenderUsers().getAvatar())
                     .createdAt(TimeMapperUtils.localDateTimeToHouseString(message.getCreatedAt()))
                     .isRead(message.getIsRead())
                     .build();
         } else {
+            String senderUserCode = message.getSenderUsers().getUserCode();
             return MessageDto.builder()
                     .id(message.getId())
                     .content(message.getContent())
                     .imageUrl(message.getMediaUrl())
                     .replyOf(null)
-                    .userCodeSend(message.getSenderUsers().getUserCode())
+                    .userCodeSend(senderUserCode)
+                    .isMyMessage(userCode.equals(senderUserCode))
                     .userAvatarSend(message.getSenderUsers().getAvatar())
                     .createdAt(TimeMapperUtils.localDateTimeToHouseString(message.getCreatedAt()))
                     .isRead(message.getIsRead())

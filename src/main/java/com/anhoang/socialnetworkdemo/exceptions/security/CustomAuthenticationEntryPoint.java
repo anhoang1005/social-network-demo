@@ -16,7 +16,7 @@ import java.io.IOException;
 public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint {
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException {
-        ResponseBody responseBody = new ResponseBody("",
+        ResponseBody<?> responseBody = new ResponseBody<>("",
                 ResponseBody.Status.SUCCESS,
                 "UNAUTHORIZED",
                 ResponseBody.Code.UNAUTHORIZED_REQUEST);
@@ -26,6 +26,6 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
         response.setContentType("application/json; charset=UTF-8");
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.getWriter().write(json);
-        log.error("Authentication info error!");
+        log.error("Error message: {} ", authException.getMessage());
     }
 }

@@ -36,6 +36,6 @@ public class JwtData {
     private List<String> role;
     @JsonProperty("issued_at")
     private LocalDateTime issuedAt;
-    @JsonProperty("expire_at")
+    @JsonProperty("expired_at")
     private LocalDateTime expiresAt;
 }

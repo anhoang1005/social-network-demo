@@ -25,6 +25,6 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         response.getWriter().write(json);
-        log.warn("Access denied!");
+        log.warn("Error message: " + accessDeniedException.getMessage());
     }
 }

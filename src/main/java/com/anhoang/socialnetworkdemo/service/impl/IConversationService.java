@@ -25,6 +25,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
@@ -43,6 +44,7 @@ public class IConversationService implements ConversationService {
     private final WebSocketEventListener eventListener;
 
     @Override
+    @Transactional
     public ResponseBody<?> userGetAllConversation(ConversationFilter filter) {
         try {
             Long userId = authUtils.getUserFromAuthentication().getId();
@@ -67,6 +69,7 @@ public class IConversationService implements ConversationService {
     }
 
     @Override
+    @Transactional
     public ResponseBody<?> userCreatePrivateConversation(String userCode) {
         try {
             String myUserCode = authUtils.getUserFromAuthentication().getUserCode();
@@ -89,6 +92,7 @@ public class IConversationService implements ConversationService {
     }
 
     @Override
+    @Transactional
     public ResponseBody<?> userCreateGroupConversation(List<String> userCodeList) {
         try {
             String myUserCode = authUtils.getUserFromAuthentication().getUserCode();
@@ -116,6 +120,7 @@ public class IConversationService implements ConversationService {
     }
 
     @Override
+    @Transactional
     public ResponseBody<?> userGetMessageOfConversation(Long conversationId, int pageNumber, int pageSize) {
         try{
             Long userId = authUtils.getUserFromAuthentication().getId();
@@ -123,10 +128,14 @@ public class IConversationService implements ConversationService {
             if(isMember == null || isMember == 0){
                 throw new RequestNotFoundException("User not in conversation!");
             }
+            Conversation conversation = conversationRepository.findConversationById(conversationId)
+                    .orElseThrow(()-> new RequestNotFoundException("ERROR"));
+            ConversationDto dto = conversationMapper.entityToConversationDto(conversation, userId);
             Pageable pageable = PageRequest.of(pageNumber - 1, pageSize, Sort.by(Sort.Order.desc("createdAt")));
             Page<Message> page = messageRepository.getListMessageByChatId(conversationId, pageable);
             List<MessageDto> dtoList = page.stream()
-                    .map(conversationMapper::entityToMessageDto)
+                    .map(message -> conversationMapper.entityToMessageDto(message,
+                            authUtils.getUserFromAuthentication().getUserCode()))
                     .collect(Collectors.toList());
             PageData<?> pageData = PageData.builder()
                     .totalPage(page.getTotalPages())
@@ -135,7 +144,8 @@ public class IConversationService implements ConversationService {
                     .pageNumber(pageNumber)
                     .data(dtoList)
                     .build();
-            return new ResponseBody<>(pageData, ResponseBody.Status.SUCCESS, ResponseBody.Code.SUCCESS);
+            dto.setMessagePage(pageData);
+            return new ResponseBody<>(dto, ResponseBody.Status.SUCCESS, ResponseBody.Code.SUCCESS);
         }catch (Exception e){
             log.error("Get message error! Error: {}", e.getMessage());
             throw new RequestNotFoundException("ERROR");
@@ -143,6 +153,7 @@ public class IConversationService implements ConversationService {
     }
 
     @Override
+    @Transactional
     public void userSendMessage(MessageData req) {
         try {
             Users users = usersRepository.findUsersByUserCode(req.getUserCode())
@@ -173,6 +184,7 @@ public class IConversationService implements ConversationService {
     }
 
     @Override
+    @Transactional
     public void userSeenMessage(MessageData req) {
         try{
             Conversation conversation = conversationRepository.findById(req.getConversationId())
@@ -185,6 +197,7 @@ public class IConversationService implements ConversationService {
     }
 
     @Override
+    @Transactional
     public ResponseBody<?> userRemoveMessage(Long messageId) {
         try {
             Message message = messageRepository.findMessageById(messageId)

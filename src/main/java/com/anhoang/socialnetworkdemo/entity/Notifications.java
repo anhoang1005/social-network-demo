@@ -1,8 +1,6 @@
 package com.anhoang.socialnetworkdemo.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,6 +15,10 @@ import java.io.Serializable;
 @Entity
 @Table(name = "notifications")
 public class Notifications extends BaseEntity<Long> implements Serializable {
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private Type type;
 
     @Column(nullable = false)
     private String imageUrl;

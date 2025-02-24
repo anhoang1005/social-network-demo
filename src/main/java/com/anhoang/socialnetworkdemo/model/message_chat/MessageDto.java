@@ -15,6 +15,8 @@ public class MessageDto {
     private Long id;
     @JsonProperty("user_code_send")
     private String userCodeSend;
+    @JsonProperty("is_my_message")
+    private boolean isMyMessage;
     @JsonProperty("user_avatar_send")
     private String userAvatarSend;
     @JsonProperty("reply_of")
