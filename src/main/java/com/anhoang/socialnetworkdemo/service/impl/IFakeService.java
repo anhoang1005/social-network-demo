@@ -1,8 +1,11 @@
 package com.anhoang.socialnetworkdemo.service.impl;
 
 import com.anhoang.socialnetworkdemo.config.Constant;
+import com.anhoang.socialnetworkdemo.entity.MediaFile;
+import com.anhoang.socialnetworkdemo.entity.Post;
 import com.anhoang.socialnetworkdemo.entity.Roles;
 import com.anhoang.socialnetworkdemo.entity.Users;
+import com.anhoang.socialnetworkdemo.repository.PostRepository;
 import com.anhoang.socialnetworkdemo.repository.RolesRepository;
 import com.anhoang.socialnetworkdemo.repository.UsersRepository;
 import com.anhoang.socialnetworkdemo.service.FakeService;
@@ -23,6 +26,7 @@ public class IFakeService implements FakeService {
     private final UsersRepository usersRepository;
     private final PasswordEncoder passwordEncoder;
     private final RolesRepository roleRepository;
+    private final PostRepository postRepository;
     private final Random random;
     private final Faker faker = new Faker(new Locale("vi"));
     private final EntityManager entityManager;
@@ -119,5 +123,53 @@ public class IFakeService implements FakeService {
             e.printStackTrace();
             log.error("Fake root error!");
         }
+    }
+
+    @Override
+    @Transactional
+    public void generateFakePosts() {
+        try{
+            List<Users> usersList = usersRepository.findAll();
+            List<Post> postsList = new ArrayList<>();
+
+            for (Users user : usersList) {
+                for (int i = 0; i < 5; i++) {
+
+                    Post post = new Post();
+                    post.setUsers(user);
+                    post.setIsShared(false);
+                    post.setContent(faker.lorem().paragraph(random.nextInt(10, 50)));
+                    post.setVisibility(faker.options().option(Post.Visibility.class));
+                    post.setLocation(faker.address().fullAddress());
+                    post.setStatus(Post.Status.NORMAL);
+                    post.setHashtags(null);
+                    post.setHashtag(null);
+
+                    MediaFile mediaFile = new MediaFile();
+                    mediaFile.setFileName("image.jpg");
+                    mediaFile.setMediaType(MediaFile.MediaType.IMAGE);
+                    mediaFile.setFileSize(1024L);
+                    mediaFile.setUrl("https://baogiaothong.mediacdn.vn/upload/2-2022/images/2022-04-18/1-1650247268-869-width740height555.jpg");
+                    mediaFile.setMediaFormat("jpg");
+                    mediaFile.setUsersUpdated(user);
+                    mediaFile.setAccessLevel(MediaFile.AccessLevel.PUBLIC);
+                    mediaFile.setPost(post);
+
+                    post.setMediaFiles(Collections.singletonList(mediaFile));
+                    postsList.add(post);
+                }
+            }
+            postRepository.saveAll(postsList);
+            log.info("Generated {} post for {} users", postsList.size(), usersList.size());
+        } catch (Exception e){
+            e.printStackTrace();
+            log.error("Fake post error!");
+        }
+
+    }
+
+    @Override
+    public void generateFakeComments() {
+
     }
 }

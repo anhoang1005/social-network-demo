@@ -15,6 +15,26 @@ import java.util.Optional;
 @Repository
 public interface FriendshipRepository extends JpaRepository<Friendship, Long> {
 
+    @Query(value = "SELECT f.friend FROM Friendship f " +
+            "where f.user.id = :userId " +
+            "AND f.status = :status")
+    Page<Users> getFriendRequestSendByMe(@Param("userId") Long userId,
+                                              Pageable pageable);
+
+    @Query(value = "SELECT f FROM Friendship f " +
+            "where f.friend.id = :userId " +
+            "AND f.status = :status")
+    Page<Friendship> getFriendRequestInviteMe(@Param("userId") Long userId,
+                                              Pageable pageable);
+
+    @Query(value = "SELECT COUNT(f) FROM Friendship f " +
+            "WHERE f.user.id = :userId1 " +
+            "AND f.friend.id = :userId2 " +
+            "AND f.status = :status")
+    Long checkExistedFriend(@Param("userId1") Long userId1,
+                            @Param("userId2") Long userId2,
+                            @Param("status") Friendship.FriendshipStatus status);
+
     Boolean existsByUserAndFriendAndStatus(Users users, Users friend, Friendship.FriendshipStatus status);
 
     Optional<Friendship> findByUserAndFriendAndStatus(Users user, Users friend, Friendship.FriendshipStatus status);

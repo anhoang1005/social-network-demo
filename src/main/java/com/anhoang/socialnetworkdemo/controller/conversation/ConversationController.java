@@ -32,7 +32,7 @@ public class ConversationController {
     }
 
     @PostMapping("/api/user/conversation/create-group")
-    public ResponseEntity<?> userCreateGroupConversation(@RequestParam("user_code_list") List<String> userCodeList){
+    public ResponseEntity<?> userCreateGroupConversation(@RequestBody List<String> userCodeList){
         return ResponseEntity.ok(conversationService.userCreateGroupConversation(userCodeList));
     }
 

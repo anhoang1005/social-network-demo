@@ -1,5 +1,7 @@
 package com.anhoang.socialnetworkdemo.model.post;
 
+import com.anhoang.socialnetworkdemo.entity.MediaFile;
+import com.anhoang.socialnetworkdemo.model.media.MediaDto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
@@ -21,10 +23,16 @@ public class SharedPostDto {
     private String sharedPostName;
     @JsonProperty("content")
     private String content;
-    @JsonProperty("media_url")
-    private List<String> mediaUrl;
+    @JsonProperty("media_files")
+    private List<MediaDto> mediaFiles;
     @JsonProperty("hash_tag")
     private List<String> hashTag;
     @JsonProperty("created_at")
     private String createdAt;
+    @JsonProperty("like_count")
+    private Long likeCount;
+    @JsonProperty("comment_count")
+    private Long commentCount;
+    @JsonProperty("shared_count")
+    private Long sharedCount;
 }

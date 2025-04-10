@@ -93,4 +93,9 @@ public class PostController {
                                               @RequestParam("reaction") PostReaction.Reaction reaction){
         return ResponseEntity.ok(postService.useReactionPost(postId, reaction));
     }
+
+    @GetMapping("/api/user/post/post-detail/{post_id}")
+    public ResponseEntity<?> userGetPostDetail(@PathVariable("post_id") Long postId){
+        return ResponseEntity.ok(postService.userGetPostDetail(postId));
+    }
 }

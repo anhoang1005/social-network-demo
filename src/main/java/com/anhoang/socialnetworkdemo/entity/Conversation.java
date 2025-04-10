@@ -23,11 +23,20 @@ public class Conversation extends BaseEntity<Long> implements Serializable {
     @Column(nullable = false)
     private ConversationType type;
 
+    @Column(nullable = true)
+    private String conversationName;
+
+    @Column(nullable = true)
+    private String conversationAvatar;
+
     @OneToMany(mappedBy = "conversation", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<ConversationMember> members = new HashSet<>();
 
     @OneToMany(mappedBy = "conversation", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Message> messages = new HashSet<>();
+
+    @OneToMany(mappedBy = "conversation", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<MessageFile> messageFiles = new HashSet<>();
 
     @Column(columnDefinition = "TEXT")
     private String latestMessage;

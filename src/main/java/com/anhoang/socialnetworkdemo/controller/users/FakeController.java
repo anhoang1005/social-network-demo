@@ -16,6 +16,7 @@ public class FakeController {
         fakeService.generateFakeRootUsers();
         fakeService.generateFakeAdminUsers();
         fakeService.generateFakeCustomerUsers();
+        fakeService.generateFakePosts();
         return ResponseEntity.ok("done");
     }
 }

@@ -1,12 +1,10 @@
 package com.anhoang.socialnetworkdemo.service.impl;
 
 import com.anhoang.socialnetworkdemo.config.websocket.WebSocketEventListener;
-import com.anhoang.socialnetworkdemo.entity.Conversation;
-import com.anhoang.socialnetworkdemo.entity.ConversationMember;
-import com.anhoang.socialnetworkdemo.entity.Message;
-import com.anhoang.socialnetworkdemo.entity.Users;
+import com.anhoang.socialnetworkdemo.entity.*;
 import com.anhoang.socialnetworkdemo.exceptions.request.RequestNotFoundException;
 import com.anhoang.socialnetworkdemo.mapper.ConversationMapper;
+import com.anhoang.socialnetworkdemo.model.media.MessageFileDto;
 import com.anhoang.socialnetworkdemo.model.message_chat.ConversationDto;
 import com.anhoang.socialnetworkdemo.model.message_chat.ConversationFilter;
 import com.anhoang.socialnetworkdemo.model.message_chat.MessageDto;
@@ -18,6 +16,7 @@ import com.anhoang.socialnetworkdemo.repository.MessageRepository;
 import com.anhoang.socialnetworkdemo.repository.UsersRepository;
 import com.anhoang.socialnetworkdemo.service.ConversationService;
 import com.anhoang.socialnetworkdemo.utils.AuthenticationUtils;
+import com.anhoang.socialnetworkdemo.utils.TimeMapperUtils;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -27,6 +26,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -154,7 +154,7 @@ public class IConversationService implements ConversationService {
 
     @Override
     @Transactional
-    public void userSendMessage(MessageData req) {
+    public MessageData userSendMessage(MessageData req) {
         try {
             Users users = usersRepository.findUsersByUserCode(req.getUserCode())
                     .orElseThrow(() -> new RequestNotFoundException("USER_NOT_FOUND"));
@@ -164,7 +164,23 @@ public class IConversationService implements ConversationService {
             message.setSenderUsers(users);
             message.setConversation(conversation);
             message.setContent(req.getContent());
-            message.setMediaUrl(req.getMediaUrl());
+            if(req.getMediaFiles()!=null){
+                List<MessageFile> mediaList = new ArrayList<>();
+                for (MessageFileDto mediaFile : req.getMediaFiles()){
+                    MessageFile messageFile = new MessageFile();
+                    messageFile.setFileName(mediaFile.getFileName());
+                    messageFile.setFileNameSave(mediaFile.getFileNameSave());
+                    messageFile.setFileSize(mediaFile.getFileSize());
+                    messageFile.setMediaFormat(mediaFile.getFileFormat());
+                    messageFile.setMediaType(mediaFile.getFileType());
+                    messageFile.setUsersUpdated(users);
+                    messageFile.setConversation(conversation);
+                    messageFile.setMessage(message);
+                    mediaList.add(messageFile);
+                }
+                message.setMessageFiles(mediaList);
+            }
+
             message.setIsRead(false);
             if(req.getReplyOf()!= null){
                 Message parentMessage = messageRepository.findMessageById(req.getReplyOf())
@@ -174,9 +190,21 @@ public class IConversationService implements ConversationService {
                 message.setParentMessage(null);
             }
             message = messageRepository.save(message);
+            req.setCreatedAt(TimeMapperUtils.localDateTimeToHouseString(message.getCreatedAt()));
+            req.setUserAvatar(users.getAvatar());
+            req.setUserName(users.getFullName());
+            req.setConversationType(conversation.getType());
+            if(conversation.getType()==Conversation.ConversationType.PRIVATE){
+                req.setConversationAvatar(users.getAvatar());
+                req.setConversationName(users.getFullName());
+            } else{
+                req.setConversationAvatar(conversation.getConversationAvatar());
+                req.setConversationName(conversation.getConversationName());
+            }
             conversation.setSendLastAt(message.getCreatedAt());
             conversation.setLatestMessage(message.getContent());
             conversationRepository.save(conversation);
+            return req;
         } catch (Exception e) {
             log.error("Send message error! Error: " + e.getMessage());
             throw new RequestNotFoundException("Failed to send message");
@@ -185,11 +213,12 @@ public class IConversationService implements ConversationService {
 
     @Override
     @Transactional
-    public void userSeenMessage(MessageData req) {
+    public MessageData userSeenMessage(MessageData req) {
         try{
             Conversation conversation = conversationRepository.findById(req.getConversationId())
                     .orElseThrow(() -> new RequestNotFoundException("CHAT_NOT_FOUND"));
 //            conversation.set(Se);
+            return req;
         } catch (Exception e){
             log.error("Send message error! Error: " + e.getMessage());
             throw new RequestNotFoundException("Failed to send message");
@@ -206,6 +235,19 @@ public class IConversationService implements ConversationService {
             return new ResponseBody<>(null, ResponseBody.Status.SUCCESS, ResponseBody.Code.SUCCESS);
         } catch (Exception e) {
             log.error("Remove message error! Error: " + e.getMessage());
+            throw new RequestNotFoundException("Failed to remove message");
+        }
+    }
+
+    @Override
+    public List<String> systemGetListMemberOfConversation(Long conversationId) {
+        try{
+            Conversation conversation = conversationRepository.findConversationById(conversationId)
+                    .orElseThrow(()-> new RequestNotFoundException("ERROR"));
+            List<String> userCodeList = conversationRepository.getListUsersMemberUserCode(conversationId);
+            return  userCodeList;
+        } catch (Exception e){
+            log.error("Get member error! Error: " + e.getMessage());
             throw new RequestNotFoundException("Failed to remove message");
         }
     }

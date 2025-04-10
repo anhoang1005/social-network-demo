@@ -1,12 +1,10 @@
-package com.anhoang.socialnetworkdemo.config.security;
+package com.anhoang.socialnetworkdemo.config.websocket;
 
 import com.anhoang.socialnetworkdemo.entity.Users;
 import com.anhoang.socialnetworkdemo.repository.UsersRepository;
 import com.anhoang.socialnetworkdemo.utils.JwtTokenUtils;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
-import org.springframework.http.server.ServletServerHttpRequest;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.WebSocketHandler;

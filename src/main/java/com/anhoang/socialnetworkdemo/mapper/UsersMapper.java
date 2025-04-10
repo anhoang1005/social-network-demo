@@ -1,14 +1,15 @@
 package com.anhoang.socialnetworkdemo.mapper;
 
 import com.anhoang.socialnetworkdemo.config.websocket.WebSocketEventListener;
+import com.anhoang.socialnetworkdemo.entity.Friendship;
 import com.anhoang.socialnetworkdemo.entity.Users;
 import com.anhoang.socialnetworkdemo.model.users.UserDto;
 import com.anhoang.socialnetworkdemo.model.users.UserShortDto;
 import com.anhoang.socialnetworkdemo.model.users.UsersDetailResponse;
+import com.anhoang.socialnetworkdemo.repository.FriendshipRepository;
 import com.anhoang.socialnetworkdemo.utils.TimeMapperUtils;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
-import org.springframework.web.socket.client.WebSocketClient;
 
 import java.util.stream.Collectors;
 
@@ -16,6 +17,7 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class UsersMapper {
     private final WebSocketEventListener webSocketEventListener;
+    private final FriendshipRepository friendshipRepository;
 
     public UsersDetailResponse entityToUsersDetailResponse(Users entity){
         return UsersDetailResponse.builder()
@@ -54,12 +56,16 @@ public class UsersMapper {
                 .build();
     }
 
-    public UserShortDto entityToUserShortDto(Users users){
+    public UserShortDto entityToUserShortDto(Long meId, Users users){
+        Long mutualCount = friendshipRepository.countMutualFriends(meId, users.getId());
+        Long checkFriend = friendshipRepository.checkExistedFriend(meId, users.getId(), Friendship.FriendshipStatus.ACCEPTED);
         return UserShortDto.builder()
                 .userId(users.getId())
                 .userCode(users.getUserCode())
                 .fullName(users.getFullName())
                 .userAvatar(users.getAvatar())
+                .isFriend( checkFriend != null && checkFriend > 0)
+                .mutualFriendCount(mutualCount!=null ? mutualCount : 0L)
                 .online(webSocketEventListener.checkCustomerConnection(users.getUserCode()))
                 .build();
     }

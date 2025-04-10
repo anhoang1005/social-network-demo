@@ -1,12 +1,11 @@
 package com.anhoang.socialnetworkdemo.service.impl;
 
-import com.anhoang.socialnetworkdemo.entity.Hashtag;
-import com.anhoang.socialnetworkdemo.entity.Post;
-import com.anhoang.socialnetworkdemo.entity.PostReaction;
-import com.anhoang.socialnetworkdemo.entity.Users;
+import com.anhoang.socialnetworkdemo.entity.*;
 import com.anhoang.socialnetworkdemo.exceptions.request.RequestNotFoundException;
 import com.anhoang.socialnetworkdemo.exceptions.users.UnauthorizedException;
+import com.anhoang.socialnetworkdemo.mapper.MediaFileMapper;
 import com.anhoang.socialnetworkdemo.mapper.PostMapper;
+import com.anhoang.socialnetworkdemo.model.media.MediaFormat;
 import com.anhoang.socialnetworkdemo.model.post.PostDto;
 import com.anhoang.socialnetworkdemo.model.post.PostRequest;
 import com.anhoang.socialnetworkdemo.payload.PageData;
@@ -102,13 +101,10 @@ public class IPostService implements PostService {
     public ResponseBody<?> userCreatePost(PostRequest req, List<MultipartFile> listFile) {
         try{
             String userCode = authUtils.getUserFromAuthentication().getUserCode();
-            Users users = usersRepository.findUsersByUserCode(userCode)
-                    .orElseThrow(() -> new RequestNotFoundException("User not found!"));
+            Users users = usersRepository.findUsersByUserCode(userCode).orElseThrow(() -> new RequestNotFoundException("User not found!"));
             String check = geminiService.aiCheckPostCreate(req).getData().toString();
             if(check.trim().equals("true")){
-                return new ResponseBody<>(null, ResponseBody.Status.SUCCESS,
-                        "Bài viết của bạn vi phạm tiêu chuẩn cộng đồng!",
-                        ResponseBody.Code.FORBIDDEN);
+                return new ResponseBody<>(null, ResponseBody.Status.SUCCESS, "Bài viết của bạn vi phạm tiêu chuẩn cộng đồng!", ResponseBody.Code.FORBIDDEN);
             }
             Post post = new Post();
             post.setUsers(users);
@@ -138,14 +134,25 @@ public class IPostService implements PostService {
             post.setHashtag(postMapper.convertToJson(finalHashTagString));
             post.setHashtags(finalHashTagList);
             post = postRepository.save(post);
-            List<String> listMedia = new ArrayList<>();
-            if(listFile!=null && !listFile.isEmpty()){
-                listFile.forEach(multipartFile -> {
-                    ResponseBody<?> upload = fileService.uploadToCloudinary(multipartFile);
-                    listMedia.add(upload.getData().toString());
-                });
-                post.setMediaUrl(postMapper.convertToJson(listMedia));
+            List<MediaFile> listMedia = new ArrayList<>();
+            if(listFile!=null && !listFile.isEmpty()) {
+                for (MultipartFile file : listFile) {
+                    ResponseBody<?> upload = fileService.uploadToCloudinary(file);
+                    MediaFile mediaFile = new MediaFile();
+                    MediaFormat mediaFormat = MediaFileMapper.getFormatOfFile(file);
+                    mediaFile.setUrl(upload.getData().toString());
+                    mediaFile.setFileName(file.getOriginalFilename());
+                    mediaFile.setMediaFormat(mediaFormat.getFormat());
+                    mediaFile.setMediaType(mediaFormat.getMediaType());
+                    mediaFile.setAccessLevel(MediaFile.AccessLevel.PUBLIC);
+                    mediaFile.setFileSize(file.getSize());
+                    mediaFile.setPost(post);
+                    mediaFile.setUsersUpdated(users);
+                    listMedia.add(mediaFile);
+                }
             }
+            post.setMediaFiles(listMedia);
+            post = postRepository.save(post);
             return new ResponseBody<>(postMapper.entityToPostDto(post, userCode),
                     ResponseBody.Status.SUCCESS, ResponseBody.Code.SUCCESS);
         } catch (Exception e){
@@ -199,7 +206,6 @@ public class IPostService implements PostService {
                     ResponseBody<?> upload = fileService.uploadToCloudinary(multipartFile);
                     listMedia.add(upload.getData().toString());
                 });
-                post.setMediaUrl(postMapper.convertToJson(listMedia));
             }
             post = postRepository.save(post);
             return new ResponseBody<>(postMapper.entityToPostDto(post, userCode),
@@ -351,6 +357,28 @@ public class IPostService implements PostService {
         }catch (Exception e){
             log.error("reaction post error! Error: {}", e.getMessage());
             e.printStackTrace();
+            throw new RequestNotFoundException("ERROR");
+        }
+    }
+
+    @Override
+    @Transactional
+    public ResponseBody<?> userGetPostDetail(Long postId) {
+        try{
+            String userCode = authUtils.getUserFromAuthentication().getUserCode();
+            Post post = postRepository.findById(postId)
+                    .orElseThrow(()-> new RequestNotFoundException("ERROR"));
+            String postUserCode = post.getUsers().getUserCode();
+            if(post.getStatus() != Post.Status.NORMAL){
+                throw new RequestNotFoundException("ERROR");
+            }
+            if(post.getVisibility() == Post.Visibility.PRIVATE && !postUserCode.equals(userCode)){
+                throw new RequestNotFoundException("ERROR");
+            }
+            PostDto postDto = postMapper.entityToPostDto(post, userCode);
+            return new ResponseBody<>(postDto, ResponseBody.Status.SUCCESS, ResponseBody.Code.SUCCESS);
+        } catch (Exception e){
+            log.error("Get post detail error! Error: {}", e.getMessage());
             throw new RequestNotFoundException("ERROR");
         }
     }

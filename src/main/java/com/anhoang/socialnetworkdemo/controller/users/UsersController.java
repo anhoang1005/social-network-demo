@@ -45,4 +45,19 @@ public class UsersController {
         return ResponseEntity.ok(usersService.rootChangeRoleUsers(userCode, isAdmin));
     }
 
+    @GetMapping("/api/user/users/get-all")
+    public ResponseEntity<?> userGetListAccount(
+            @RequestParam("page_number") int pageNumber,
+            @RequestParam("page_size") int pageSize){
+        return ResponseEntity.ok(usersService.getListUsersAccount(pageNumber, pageSize));
+    }
+
+    @GetMapping("/api/user/users/search-by-name")
+    public ResponseEntity<?> userGetListAccount(
+            @RequestParam("full_name") String fullName,
+            @RequestParam("page_number") int pageNumber,
+            @RequestParam("page_size") int pageSize){
+        return ResponseEntity.ok(usersService.getListUsersAccountByFullName(fullName, pageNumber, pageSize));
+    }
+
 }

@@ -7,5 +7,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ConversationMemberRepository extends JpaRepository<ConversationMember, Long> {
 
+    Boolean existsByConversation_IdAndUsers_Id(Long conversationId, Long userId);
 
 }

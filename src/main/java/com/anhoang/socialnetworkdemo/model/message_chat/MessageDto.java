@@ -1,5 +1,6 @@
 package com.anhoang.socialnetworkdemo.model.message_chat;
 
+import com.anhoang.socialnetworkdemo.model.media.MessageFileDto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
@@ -17,14 +18,16 @@ public class MessageDto {
     private String userCodeSend;
     @JsonProperty("is_my_message")
     private boolean isMyMessage;
+    @JsonProperty("user_name_send")
+    private String userNameSend;
     @JsonProperty("user_avatar_send")
     private String userAvatarSend;
     @JsonProperty("reply_of")
     private MessageDto replyOf;
     @JsonProperty("content")
     private String content;
-    @JsonProperty("image_Url")
-    private String imageUrl;
+    @JsonProperty("media_files")
+    private List<MessageFileDto> mediaFiles;
     @JsonProperty("is_read")
     private Boolean isRead;
     @JsonProperty("reaction_list")

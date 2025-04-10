@@ -21,4 +21,6 @@ public interface PostService {
     ResponseBody<?> userGetUserPostOther(String userCode, String hashTag, int pageNumber, int pageSize);
     ResponseBody<?> adminActivePost(Long postId, Post.Status status);
     ResponseBody<?> useReactionPost(Long postId, PostReaction.Reaction reaction);
+
+    ResponseBody<?> userGetPostDetail(Long postId);
 }

@@ -43,6 +43,9 @@ public class PostComment extends BaseEntity<Long>{
     @OneToMany(mappedBy = "postComment", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<PostReaction> reactionList;
 
+    @OneToMany(mappedBy = "postComment", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<MediaFile> mediaFileList;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id", nullable = false)
     private Post post;

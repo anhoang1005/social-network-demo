@@ -8,13 +8,14 @@ import com.anhoang.socialnetworkdemo.model.users.UserShortDto;
 import com.anhoang.socialnetworkdemo.payload.PageData;
 import com.anhoang.socialnetworkdemo.payload.ResponseBody;
 import com.anhoang.socialnetworkdemo.repository.FriendshipRepository;
-import com.anhoang.socialnetworkdemo.repository.UsersRepository;
 import com.anhoang.socialnetworkdemo.service.FriendshipService;
 import com.anhoang.socialnetworkdemo.utils.AuthenticationUtils;
+import com.anhoang.socialnetworkdemo.repository.UsersRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -195,7 +196,8 @@ public class IFriendshipService implements FriendshipService{
             Long userId = authUtils.getUserFromAuthentication().getId();
             Page<Users> page = friendshipRepository.findAllFriends(
                     userId, PageRequest.of(pageNumber-1, pageSize));
-            List<UserShortDto> friends = page.stream().map(usersMapper::entityToUserShortDto).collect(Collectors.toList());
+            List<UserShortDto> friends = page.stream()
+                    .map(users -> usersMapper.entityToUserShortDto(userId, users)).collect(Collectors.toList());
             PageData<?> pageData = PageData.builder()
                     .data(friends)
                     .pageNumber(pageNumber)
@@ -211,24 +213,14 @@ public class IFriendshipService implements FriendshipService{
     }
 
     @Override
-    public Long getFriendListCount() {
-        try {
-            Long userId = authUtils.getUserFromAuthentication().getId();
-            Long friendCount = friendshipRepository.countFriendOfUser(userId);
-            return friendCount!=null ? friendCount : 0L;
-        } catch (Exception e){
-            log.error("Error: " + e.getMessage());
-            throw new RequestNotFoundException("Error: " + e.getMessage());
-        }
-    }
-
-    @Override
     public ResponseBody<?> getMutualFriendsList(Long userOtherId, int pageNumber, int pageSize) {
         try{
             Long userId = authUtils.getUserFromAuthentication().getId();
             Page<Users> page = friendshipRepository.findMutualFriendsByPage(
                     userId, userOtherId, PageRequest.of(pageNumber - 1, pageSize));
-            List<UserShortDto> userShortDtoList = page.stream().map(usersMapper::entityToUserShortDto).collect(Collectors.toList());
+            List<UserShortDto> userShortDtoList = page.stream()
+                    .map(users -> usersMapper.entityToUserShortDto(userId, users))
+                    .collect(Collectors.toList());
             PageData<?> pageData = PageData.builder()
                     .data(userShortDtoList)
                     .totalPage(page.getTotalPages())
@@ -244,11 +236,49 @@ public class IFriendshipService implements FriendshipService{
     }
 
     @Override
+    public ResponseBody<?> getListFriendRequestSendByMe(int pageNumber, int pageSize) {
+        try{
+            Long userId = authUtils.getUserFromAuthentication().getId();
+            Page<Users> page = friendshipRepository
+                    .getFriendRequestSendByMe(userId, PageRequest.of(pageNumber-1, pageSize,
+                            Sort.by(Sort.Order.desc("id"))));
+            PageData<?> pageData = PageData.builder()
+                    .totalData(page.getTotalElements())
+                    .totalPage(page.getTotalPages())
+                    .pageNumber(page.getNumber() + 1)
+                    .pageSize(page.getSize())
+                    .data(page.stream()
+                            .map(users -> usersMapper.entityToUserShortDto(userId, users)).collect(Collectors.toList()))
+                    .build();
+        } catch (Exception e){
+            log.error("Error: " + e.getMessage());
+            throw new RequestNotFoundException("Error: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public ResponseBody<?> getListFriendRequestInviteMe(int pageMuber, int pageSize) {
+        return null;
+    }
+
+    @Override
     public Long getMutualFriendCount(Long userOtherId) {
         try{
             Long userId = authUtils.getUserFromAuthentication().getId();
             Long userCount = friendshipRepository.countMutualFriends(userId, userOtherId);
             return userCount!=null ? userCount : 0L;
+        } catch (Exception e){
+            log.error("Error: " + e.getMessage());
+            throw new RequestNotFoundException("Error: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Long getFriendListCount() {
+        try {
+            Long userId = authUtils.getUserFromAuthentication().getId();
+            Long friendCount = friendshipRepository.countFriendOfUser(userId);
+            return friendCount!=null ? friendCount : 0L;
         } catch (Exception e){
             log.error("Error: " + e.getMessage());
             throw new RequestNotFoundException("Error: " + e.getMessage());

@@ -5,4 +5,8 @@ public interface FakeService {
     void generateFakeCustomerUsers();
     void generateFakeAdminUsers();
     void generateFakeRootUsers();
+
+    void generateFakePosts();
+
+    void generateFakeComments();
 }

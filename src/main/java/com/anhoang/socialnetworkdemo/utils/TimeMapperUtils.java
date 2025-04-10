@@ -78,11 +78,11 @@ public class TimeMapperUtils {
         if (seconds < 60) {
             return "Vừa xong";
         } else if (minutes < 60) {
-            return minutes + " phút trước";
+            return minutes + " phút";
         } else if (hours < 24) {
-            return hours + " giờ trước";
+            return hours + " giờ";
         } else if (days < 3) {
-            return days + " ngày trước";
+            return days + " ngày";
         } else if (days < 365) {
             DateTimeFormatter monthDayFormatter = DateTimeFormatter.ofPattern("d 'tháng' M");
             return createdAt.format(monthDayFormatter) + " lúc " + createdAt.format(DateTimeFormatter.ofPattern("HH:mm"));
@@ -90,6 +90,11 @@ public class TimeMapperUtils {
             DateTimeFormatter yearFormatter = DateTimeFormatter.ofPattern("'tháng' M 'năm' yyyy");
             return createdAt.format(yearFormatter);
         }
+    }
+
+    public static String localDateTimeToTime24(LocalDateTime dateTime) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
+        return dateTime.format(formatter);
     }
 
 }

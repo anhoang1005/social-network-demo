@@ -21,10 +21,6 @@ public class Post extends BaseEntity<Long> {
     @Column(columnDefinition = "TEXT")
     private String content;
 
-    @Lob
-    @Column(columnDefinition = "TEXT")
-    private String mediaUrl;
-
     @Column(columnDefinition = "TEXT")
     private String location;
 
@@ -84,6 +80,13 @@ public class Post extends BaseEntity<Long> {
 
     @OneToMany(mappedBy = "post", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<PostReaction> postReactionList;
+
+    @OneToMany(mappedBy = "post", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<MediaFile> mediaFiles;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "group_id")
+    private Group group;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")

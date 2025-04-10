@@ -49,6 +49,7 @@ public class Users extends BaseEntity<Long> implements Serializable {
 	@Column(columnDefinition = "VARCHAR(64)")
 	private String refreshToken;
 
+	//Post-Comment-Reaction
 	@OneToMany(mappedBy = "users", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	private List<Post> postList = new ArrayList<>();
 	@OneToMany(mappedBy = "users", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
@@ -56,21 +57,35 @@ public class Users extends BaseEntity<Long> implements Serializable {
 	@OneToMany(mappedBy = "users", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	private List<PostReaction> postReactionList = new ArrayList<>();
 
+	//Conversation-Message
 	@OneToMany(mappedBy = "users", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	private List<ConversationMember> conversationMemberList;
 	@OneToMany(mappedBy = "senderUsers", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	private List<Message> messageList;
+	@OneToMany(mappedBy = "usersUpdated", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	private List<MessageFile> messageFileList;
 
+	//MediaFile
+	@OneToMany(mappedBy = "usersUpdated", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	private List<MediaFile> mediaFileList;
+
+	//Follow-User
 	@OneToMany(mappedBy = "follower", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	private List<Follow> userMeFollowList;
 	@OneToMany(mappedBy = "following", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	private List<Follow> userFollowMeList;
 
+	//Friendship
 	@OneToMany(mappedBy = "user", fetch =  FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<Friendship> userList = new ArrayList<>(); //danh sach ban duoc gui
 	@OneToMany(mappedBy = "friend", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<Friendship> friendList = new ArrayList<>(); //Danh sach ban nguoi dung gui
 
+	//Group
+	@OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+	private  List<GroupMember> groupList = new ArrayList<>();
+
+	//Role
 	@ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
 	@JoinTable(
 			name = "user_roles",

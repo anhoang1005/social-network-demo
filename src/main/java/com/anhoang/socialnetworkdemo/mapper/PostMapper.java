@@ -1,9 +1,11 @@
 package com.anhoang.socialnetworkdemo.mapper;
 
+import com.anhoang.socialnetworkdemo.entity.MediaFile;
 import com.anhoang.socialnetworkdemo.entity.Post;
 import com.anhoang.socialnetworkdemo.entity.PostReaction;
 import com.anhoang.socialnetworkdemo.entity.Users;
 import com.anhoang.socialnetworkdemo.exceptions.request.RequestNotFoundException;
+import com.anhoang.socialnetworkdemo.model.media.MediaDto;
 import com.anhoang.socialnetworkdemo.model.post.PostDto;
 import com.anhoang.socialnetworkdemo.model.post.SharedPostDto;
 import com.anhoang.socialnetworkdemo.repository.PostReactionRepository;
@@ -41,6 +43,7 @@ public class PostMapper {
     }
 
     public PostDto entityToPostDto(Post post, String userCode){
+        List<MediaFile> mediaFileList = post.getMediaFiles();
         PostDto dto = new PostDto();
         Users users = post.getUsers();
         dto.setId(post.getId());
@@ -48,10 +51,7 @@ public class PostMapper {
         dto.setPostName(users.getFullName());
         dto.setUserCode(users.getUserCode());
         dto.setContent(post.getContent()!=null ? post.getContent() : null);
-        dto.setMediaUrl(post.getMediaUrl()!=null ?
-                convertFromJson(post.getMediaUrl()) : null);
         dto.setHashTag(post.getHashtag() != null ? convertFromJson(post.getHashtag()): null);
-
         dto.setLocation(post.getLocation()!=null ? post.getLocation() : null);
         dto.setStatus(post.getStatus());
         dto.setLikeCount(postRepository.countReactionsByPostId(post.getId()));
@@ -60,11 +60,22 @@ public class PostMapper {
         dto.setIsShared(post.getIsShared());
         dto.setVisibility(post.getVisibility());
         dto.setCreatedAt(TimeMapperUtils.formatFacebookTime(post.getCreatedAt()));
-        if(post.getIsShared()){
-            dto.setSharedPost(entityToSharePostDto(post.getSharedPost()));
-        } else{
-            dto.setSharedPost(null);
+
+        if (mediaFileList != null && !mediaFileList.isEmpty()) {
+            dto.setMediaFiles(mediaFileList.stream().map(mediaFile -> {
+                        MediaDto mediaDto = new MediaDto();
+                        mediaDto.setMediaType(mediaFile.getMediaType());
+                        mediaDto.setFileUrl(mediaFile.getUrl());
+                        mediaDto.setFileSize(mediaFile.getFileSize());
+                        mediaDto.setFormat(mediaFile.getMediaFormat());
+                        return mediaDto; }).toList());
+        } else {
+            dto.setMediaFiles(null);
         }
+
+        if(post.getIsShared()) dto.setSharedPost(entityToSharePostDto(post.getSharedPost()));
+        else dto.setSharedPost(null);
+
         if(userCode!=null){
             PostReaction reaction = reactionRepository.findPostReactionByPostIdAndUserCode(
                     userCode, post.getId());
@@ -80,16 +91,29 @@ public class PostMapper {
     }
 
     public SharedPostDto entityToSharePostDto(Post post){
+        List<MediaFile> mediaFileList = post.getMediaFiles();
+        Users users = post.getUsers();
         SharedPostDto dto = new SharedPostDto();
         dto.setContent(post.getContent()!=null ? post.getContent() : null);
-        dto.setMediaUrl(post.getMediaUrl()!=null ?
-                convertFromJson(post.getMediaUrl()): null);
         dto.setHashTag(post.getHashtag() != null ? convertFromJson(post.getHashtag()) : null);
         dto.setSharedPostId(post.getId());
         dto.setCreatedAt(TimeMapperUtils.formatFacebookTime(post.getCreatedAt()));
-        Users users = post.getUsers();
         dto.setSharedPostAvatar(users.getAvatar());
         dto.setSharedPostName(users.getFullName());
+        dto.setLikeCount(postRepository.countReactionsByPostId(post.getId()));
+        dto.setCommentCount(postRepository.countCommentsByPostId(post.getId()));
+        dto.setSharedCount(postRepository.countSharesByPostId(post.getId()));
+        if (mediaFileList != null && !mediaFileList.isEmpty()) {
+            dto.setMediaFiles(mediaFileList.stream().map(mediaFile -> {
+                MediaDto mediaDto = new MediaDto();
+                mediaDto.setMediaType(mediaFile.getMediaType());
+                mediaDto.setFileUrl(mediaFile.getUrl());
+                mediaDto.setFileSize(mediaFile.getFileSize());
+                mediaDto.setFormat(mediaFile.getMediaFormat());
+                return mediaDto; }).toList());
+        } else {
+            dto.setMediaFiles(null);
+        }
         return dto;
     }
 }

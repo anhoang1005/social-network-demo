@@ -16,4 +16,7 @@ public interface UsersService {
 
     ResponseBody<?> rootChangeRoleUsers(String userCode, boolean isAdmin);
 
+    ResponseBody<?> getListUsersAccount(int pageNumber, int pageSize);
+
+    ResponseBody<?> getListUsersAccountByFullName(String fullName, int pageNumber, int pageSize);
 }

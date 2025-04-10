@@ -2,6 +2,7 @@ package com.anhoang.socialnetworkdemo.model.post;
 
 import com.anhoang.socialnetworkdemo.entity.Post;
 import com.anhoang.socialnetworkdemo.entity.PostReaction;
+import com.anhoang.socialnetworkdemo.model.media.MediaDto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
@@ -29,8 +30,8 @@ public class PostDto {
     private String content;
     @JsonProperty("visibility")
     private Post.Visibility visibility;
-    @JsonProperty("media_url")
-    private List<String> mediaUrl;
+    @JsonProperty("media_files")
+    private List<MediaDto> mediaFiles;
     @JsonProperty("location")
     private String location;
     @JsonProperty("hash_tag")

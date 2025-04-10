@@ -5,6 +5,7 @@ import com.anhoang.socialnetworkdemo.entity.Users;
 import com.anhoang.socialnetworkdemo.exceptions.request.RequestNotFoundException;
 import com.anhoang.socialnetworkdemo.mapper.UsersMapper;
 import com.anhoang.socialnetworkdemo.model.users.UserRegisterRequest;
+import com.anhoang.socialnetworkdemo.payload.PageData;
 import com.anhoang.socialnetworkdemo.payload.ResponseBody;
 import com.anhoang.socialnetworkdemo.repository.RolesRepository;
 import com.anhoang.socialnetworkdemo.repository.UsersRepository;
@@ -14,12 +15,15 @@ import com.anhoang.socialnetworkdemo.utils.AuthenticationUtils;
 import com.anhoang.socialnetworkdemo.utils.TimeMapperUtils;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -113,6 +117,47 @@ public class IUsersService implements UsersService {
             return new ResponseBody<>("", ResponseBody.Status.SUCCESS, ResponseBody.Code.SUCCESS);
         } catch (Exception e) {
             log.error("Root users change users to {} admin failed! Error: {}", userCode, e.getMessage());
+            throw new RequestNotFoundException("ERROR");
+        }
+    }
+
+    @Override
+    public ResponseBody<?> getListUsersAccount(int pageNumber, int pageSize) {
+        try{
+            Long userId = authenticationUtils.getUserFromAuthentication().getId();
+            Page<Users> page = usersRepository.getAllByIdAndStatus(userId,
+                    Users.Status.BINH_THUONG, PageRequest.of(pageNumber-1, pageSize));
+            PageData<?> pageData = PageData.builder()
+                    .pageNumber(page.getNumber() + 1)
+                    .pageSize(page.getSize())
+                    .totalData(page.getTotalElements())
+                    .totalPage(page.getTotalPages())
+                    .data(page.stream()
+                            .map(users -> usersMapper.entityToUserShortDto(userId, users)).collect(Collectors.toList()))
+                    .build();
+            return new ResponseBody<>(pageData, ResponseBody.Status.SUCCESS, ResponseBody.Code.SUCCESS);
+        } catch (Exception e){
+            log.error("Get list users account error! Error: {}", e.getMessage());
+            throw new RequestNotFoundException("ERROR");
+        }
+    }
+
+    @Override
+    public ResponseBody<?> getListUsersAccountByFullName(String fullName, int pageNumber, int pageSize) {
+        try{
+            Long userId = authenticationUtils.getUserFromAuthentication().getId();
+            Page<Users> page = usersRepository.findUsersByFullNameLikeAndStatus(fullName, Users.Status.BINH_THUONG, PageRequest.of(pageNumber-1 ,pageSize));
+            PageData<?> pageData = PageData.builder()
+                    .pageNumber(page.getNumber() + 1)
+                    .pageSize(page.getSize())
+                    .totalData(page.getTotalElements())
+                    .totalPage(page.getTotalPages())
+                    .data(page.stream()
+                            .map(users -> usersMapper.entityToUserShortDto(userId, users)).collect(Collectors.toList()))
+                    .build();
+            return new ResponseBody<>(pageData, ResponseBody.Status.SUCCESS, ResponseBody.Code.SUCCESS);
+        } catch (Exception e){
+            log.error("Get list users account error! Error: {}", e.getMessage());
             throw new RequestNotFoundException("ERROR");
         }
     }

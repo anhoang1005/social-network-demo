@@ -27,11 +27,19 @@ public interface FriendshipService {
     //Lay danh sach ban be
     ResponseBody<?> getFriendsList(int pageSize, int pageNumber);
 
-    Long getFriendListCount();
-
     //Lay danh sach ban chung
     ResponseBody<?> getMutualFriendsList(Long userOtherId, int pageNumber, int pageSize);
 
+    //Lay ra danh sach loi moi ket ban toi da gui
+    ResponseBody<?> getListFriendRequestSendByMe(int pageNumber, int pageSize);
+
+    //Lay ra danh sach loi moi ket ban gui toi toi
+    ResponseBody<?> getListFriendRequestInviteMe(int pageMuber, int pageSize);
+
+    //Lay ra so luong ban be cua toi
+    Long getFriendListCount();
+
     //Lay so luong ban chung
     Long getMutualFriendCount(Long userOtherId);
+
 }

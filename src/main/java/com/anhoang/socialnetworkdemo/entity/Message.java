@@ -16,6 +16,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Message extends BaseEntity<Long> implements Serializable {
+
     @ManyToOne
     @JoinColumn(name = "conversation_id", nullable = false)
     private Conversation conversation;
@@ -30,11 +31,11 @@ public class Message extends BaseEntity<Long> implements Serializable {
     @OneToMany(mappedBy = "parentMessage", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<Message> childrenMessage = new ArrayList<>();
 
+    @OneToMany(mappedBy = "message", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<MessageFile> messageFiles = new ArrayList<>();
+
     @ManyToOne(fetch = FetchType.LAZY)
     private Message parentMessage;
-
-    @Column(columnDefinition = "TEXT")
-    private String mediaUrl;
 
     @Column(name = "is_read", nullable = false)
     private Boolean isRead = false;

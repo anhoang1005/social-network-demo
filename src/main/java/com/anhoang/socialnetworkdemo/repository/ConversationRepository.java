@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -29,4 +30,10 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
             "            WHERE cm.conversation.id = c.id " +
             "            AND cm.users.id = :userId)")
     Long userExistedInConversation(Long conversationId, Long userId);
+
+    @Query("SELECT u.userCode FROM Users u " +
+            "JOIN ConversationMember cm ON cm.users.id = u.id " +
+            "WHERE cm.conversation.id = :conversationId")
+    List<String> getListUsersMemberUserCode(@Param("conversationId") Long conversationId);
+
 }
