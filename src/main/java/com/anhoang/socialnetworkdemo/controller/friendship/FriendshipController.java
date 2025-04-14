@@ -15,60 +15,23 @@ public class FriendshipController {
         return ResponseEntity.ok(friendshipService.checkIsFriend(userOtherId));
     }
 
-    @GetMapping("/api/user/friend/get-friend")
-    public ResponseEntity<?> getMyFriendList(@RequestParam("page_number") int pageNumber,
-                                             @RequestParam("page_size") int pageSize){
-        return ResponseEntity.ok(friendshipService.getFriendsList(pageNumber, pageSize));
+    @GetMapping("/api/user/friend/friendship-list")
+    public ResponseEntity<?> userGetFriendshipList(@RequestParam("type") String type,
+                                                   @RequestParam(name = "user_other_id", required = false) Long userOtherId,
+                                                   @RequestParam("page_number") int pageNumber,
+                                                   @RequestParam("page_size") int pageSize){
+        return ResponseEntity.ok(friendshipService.getFriendshipList(type, userOtherId, pageNumber, pageSize));
     }
 
-    @GetMapping("/api/user/friend/get-friend-count")
-    public ResponseEntity<?> getMyFriendListCount(){
-        return ResponseEntity.ok(friendshipService.getFriendListCount());
+    @PostMapping("/api/user/friend/friendship-action")
+    public ResponseEntity<?> userFriendshipAction(@RequestParam("type") String type,
+                                                  @RequestParam("user_id") Long userId){
+        return ResponseEntity.ok(friendshipService.userFriendshipActionEvent(type, userId));
     }
 
-    @GetMapping("/api/user/friend/mutual-friend")
-    public ResponseEntity<?> getListMyFriend(@RequestParam("user_other_id") Long userOtherId,
-                                             @RequestParam("page_number") int pageNumber,
-                                             @RequestParam("page_size") int pageSize){
-        return ResponseEntity.ok(friendshipService.getMutualFriendsList(userOtherId ,pageNumber, pageSize));
+    @GetMapping("/api/user/friend/friendship-count")
+    public ResponseEntity<?> getMyFriendListCount(@RequestParam("type") String type,
+                                                  @RequestParam(name = "user_other_id", required = false) Long userOtherId){
+        return ResponseEntity.ok(friendshipService.getFriendshipCount(type, userOtherId));
     }
-
-    @GetMapping("/api/user/friend/mutual-friend-count")
-    public ResponseEntity<?> getListMyFriend(@RequestParam("user_other_id") Long userOtherId){
-        return ResponseEntity.ok(friendshipService.getMutualFriendCount(userOtherId));
-    }
-
-    @GetMapping("/api/user/friend/send-request/{user_code}")
-    public ResponseEntity<?> sendFriendRequest(@PathVariable("user_code") String userCode){
-        return ResponseEntity.ok(friendshipService.userSendFriendRequest(userCode));
-    }
-
-    @GetMapping("/api/user/friend/accept-request/{user_code}")
-    public ResponseEntity<?> acceptFriendRequest(@PathVariable("user_code") String userCode){
-        return ResponseEntity.ok(friendshipService.userAcceptFriendRequest(userCode));
-    }
-
-    @DeleteMapping("/api/user/friend/remove-request/{user_code}")
-    public ResponseEntity<?> removeFriendRequest(@PathVariable("user_code") String userCode){
-        return ResponseEntity.ok(friendshipService.userRemoveFriendRequest(userCode));
-    }
-
-    @DeleteMapping("/api/user/friend/reject-request/{user_code}")
-    public ResponseEntity<?> rejectFriendRequest(@PathVariable("user_code") String userCode){
-        return ResponseEntity.ok(friendshipService.userDeclineFriendRequest(userCode));
-    }
-
-    @DeleteMapping("/api/user/friend/remove-friend/{user_code}")
-    public ResponseEntity<?> removeFriend(@PathVariable("user_code") String userCode){
-        return ResponseEntity.ok(friendshipService.userRemoveFriend(userCode));
-    }
-
-    @DeleteMapping("/api/user/friend/block/{user_code}")
-    public ResponseEntity<?> blockFriendRequest(@PathVariable("user_code") String userCode,
-                                                @RequestParam("status") Boolean status){
-        return ResponseEntity.ok(friendshipService.userBlockOrUnlockFriend(userCode, status));
-    }
-
-
-
 }

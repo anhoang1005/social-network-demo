@@ -1,21 +1,18 @@
 package com.anhoang.socialnetworkdemo.controller;
 
 import com.anhoang.socialnetworkdemo.payload.socket_payload.MessageData;
+import com.anhoang.socialnetworkdemo.payload.socket_payload.SocketBody;
 import com.anhoang.socialnetworkdemo.service.ConversationService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.messaging.simp.user.SimpUser;
-import org.springframework.messaging.simp.user.SimpUserRegistry;
 import org.springframework.stereotype.Controller;
 
-import javax.swing.*;
 import java.util.List;
 
 @Controller
@@ -41,9 +38,12 @@ public class PrivateChatController {
             System.out.println("chat");
         }
         List<String> userMembers = conversationService.systemGetListMemberOfConversation(Long.valueOf(conversationTopic));
+        SocketBody<?> messageSocket = SocketBody.builder()
+                .type(SocketBody.Type.MESSAGE)
+                .body(message).createdAt(null).build();
         for (String member : userMembers) {
             if(!member.equals(userCode)) {
-                messagingTemplate.convertAndSendToUser(member, "/queue/private", message);
+                messagingTemplate.convertAndSendToUser(member, "/queue/private", messageSocket);
             }
         }
         //sendMessageToUser(userCode, message.toString(), userMembers);

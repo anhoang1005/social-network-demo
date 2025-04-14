@@ -85,6 +85,12 @@ public class Users extends BaseEntity<Long> implements Serializable {
 	@OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
 	private  List<GroupMember> groupList = new ArrayList<>();
 
+	//Notify
+	@OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<Notifications> notifyList = new ArrayList<>();
+	@OneToMany(mappedBy = "senderUser", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<Notifications> notifySenderList = new ArrayList<>();
+
 	//Role
 	@ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
 	@JoinTable(

@@ -1,14 +1,15 @@
 package com.anhoang.socialnetworkdemo.service.impl;
 
 import com.anhoang.socialnetworkdemo.entity.Friendship;
+import com.anhoang.socialnetworkdemo.entity.Notifications;
 import com.anhoang.socialnetworkdemo.entity.Users;
 import com.anhoang.socialnetworkdemo.exceptions.request.RequestNotFoundException;
 import com.anhoang.socialnetworkdemo.mapper.UsersMapper;
-import com.anhoang.socialnetworkdemo.model.users.UserShortDto;
 import com.anhoang.socialnetworkdemo.payload.PageData;
 import com.anhoang.socialnetworkdemo.payload.ResponseBody;
 import com.anhoang.socialnetworkdemo.repository.FriendshipRepository;
 import com.anhoang.socialnetworkdemo.service.FriendshipService;
+import com.anhoang.socialnetworkdemo.service.NotificationService;
 import com.anhoang.socialnetworkdemo.utils.AuthenticationUtils;
 import com.anhoang.socialnetworkdemo.repository.UsersRepository;
 import lombok.AllArgsConstructor;
@@ -19,7 +20,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -29,9 +29,11 @@ public class IFriendshipService implements FriendshipService{
     private final AuthenticationUtils authUtils;
     private final FriendshipRepository friendshipRepository;
     private final UsersRepository usersRepository;
+    private final NotificationService notifyService;
     private final UsersMapper usersMapper;
 
     @Override
+    @Transactional
     public Boolean checkIsFriend(Long userOtherId) {
         try{
             Long userId = authUtils.getUserFromAuthentication().getId();
@@ -49,186 +51,84 @@ public class IFriendshipService implements FriendshipService{
 
     @Override
     @Transactional
-    public ResponseBody<?> userSendFriendRequest(String userCode) {
+    public ResponseBody<?> userFriendshipActionEvent(String type, Long userOtherId) {
         try {
             Long userId = authUtils.getUserFromAuthentication().getId();
             Users me = usersRepository.findById(userId)
                     .orElseThrow(() -> new RequestNotFoundException("User not found"));
-            Users friend = usersRepository.findUsersByUserCode(userCode)
+            Users friend = usersRepository.findById(userOtherId)
                     .orElseThrow(() -> new RequestNotFoundException("Friend not found"));
-            Friendship friendship = new Friendship();
-            friendship.setUser(me);
-            friendship.setFriend(friend);
-            friendship.setStatus(Friendship.FriendshipStatus.PENDING);
-            friendshipRepository.save(friendship);
-            return new ResponseBody<>("OK");
-        } catch (Exception e) {
-            log.error("Error: " + e.getMessage());
-            throw new RequestNotFoundException("Error: " + e.getMessage());
-        }
-    }
+            switch (type) {
+                case "ACCEPT_REQUEST" -> {
+                    //Cap nhat ban ghi cu
+                    Friendship friendship = friendshipRepository.findByUserAndFriendAndStatus(
+                            friend, me, Friendship.FriendshipStatus.PENDING)
+                            .orElseThrow(() -> new RequestNotFoundException("Friend request not found"));
+                    friendship.setStatus(Friendship.FriendshipStatus.ACCEPTED);
+                    friendshipRepository.save(friendship);
+                    //Tao ban ghi moi
+                    Friendship friendship1 = new Friendship();
+                    friendship1.setUser(me);
+                    friendship1.setFriend(friend);
+                    friendship1.setStatus(Friendship.FriendshipStatus.ACCEPTED);
+                    friendship1 = friendshipRepository.save(friendship1);
 
-    @Override
-    @Transactional
-    public ResponseBody<?> userAcceptFriendRequest(String userCode) {
-        try{
-            Long userId = authUtils.getUserFromAuthentication().getId();
-            Users me = usersRepository.findById(userId)
-                    .orElseThrow(() -> new RequestNotFoundException("User not found"));
-            Users friend = usersRepository.findUsersByUserCode(userCode)
-                    .orElseThrow(() -> new RequestNotFoundException("Friend not found"));
-            //Cap nhat ban ghi cu
-            Friendship friendship = friendshipRepository.findByUserAndFriendAndStatus(
-                    friend, me, Friendship.FriendshipStatus.PENDING)
-                    .orElseThrow(() -> new RequestNotFoundException("Friend request not found"));
-            friendship.setStatus(Friendship.FriendshipStatus.ACCEPTED);
-            friendshipRepository.save(friendship);
-            //Tao ban ghi moi
-            Friendship friendship1 = new Friendship();
-            friendship1.setUser(me);
-            friendship1.setFriend(friend);
-            friendship1.setStatus(Friendship.FriendshipStatus.ACCEPTED);
-            friendshipRepository.save(friendship1);
-            return new ResponseBody<>("OK");
-        } catch (Exception e) {
-            log.error("Error: " + e.getMessage());
-            throw new RequestNotFoundException("Error: " + e.getMessage());
-        }
-    }
+                    notifyService.sendFriendshipNotifyToUser(Notifications.Type.FRIEND_ACCEPTED, me.getUserCode(),
+                            friend.getUserCode(), friendship1.getUpdatedAt());
 
-    @Override
-    public ResponseBody<?> userRemoveFriend(String userCode) {
-        try{
-            Long userId = authUtils.getUserFromAuthentication().getId();
-            Users me = usersRepository.findById(userId)
-                    .orElseThrow(() -> new RequestNotFoundException("User not found"));
-            Users friend = usersRepository.findUsersByUserCode(userCode)
-                    .orElseThrow(() -> new RequestNotFoundException("Friend not found"));
-            Friendship friendship = friendshipRepository.findByUserAndFriendAndStatus(
-                    me, friend, Friendship.FriendshipStatus.ACCEPTED)
-                    .orElseThrow(() -> new RequestNotFoundException("Friend not found"));
-            friendshipRepository.delete(friendship);
-            Friendship friendship1 = friendshipRepository.findByUserAndFriendAndStatus(
-                    friend, me, Friendship.FriendshipStatus.ACCEPTED)
-                    .orElseThrow(() -> new RequestNotFoundException("Friend not found"));
-            friendshipRepository.delete(friendship1);
-            return new ResponseBody<>("OK");
-        } catch (Exception e) {
-            log.error("Error: " + e.getMessage());
-            throw new RequestNotFoundException("Error: " + e.getMessage());
-        }
-    }
-
-    @Override
-    public ResponseBody<?> userDeclineFriendRequest(String userCode) {
-        try{
-            Long userId = authUtils.getUserFromAuthentication().getId();
-            Users me = usersRepository.findById(userId)
-                    .orElseThrow(() -> new RequestNotFoundException("User not found"));
-            Users friend = usersRepository.findUsersByUserCode(userCode)
-                    .orElseThrow(() -> new RequestNotFoundException("Friend not found"));
-            Friendship friendship = friendshipRepository.findByUserAndFriendAndStatus(
-                    friend, me, Friendship.FriendshipStatus.PENDING)
-                    .orElseThrow(() -> new RequestNotFoundException("Friend not found"));
-            friendshipRepository.delete(friendship);
-            return new ResponseBody<>("OK");
-        } catch (Exception e) {
-            log.error("Error: " + e.getMessage());
-            throw new RequestNotFoundException("Error: " + e.getMessage());
-        }
-    }
-
-    @Override
-    public ResponseBody<?> userRemoveFriendRequest(String userCode) {
-        try{
-            Long userId = authUtils.getUserFromAuthentication().getId();
-            Users me = usersRepository.findById(userId)
-                    .orElseThrow(() -> new RequestNotFoundException("User not found"));
-            Users friend = usersRepository.findUsersByUserCode(userCode)
-                    .orElseThrow(() -> new RequestNotFoundException("Friend not found"));
-            Friendship friendship = friendshipRepository.findByUserAndFriendAndStatus(
-                    me, friend, Friendship.FriendshipStatus.PENDING)
-                    .orElseThrow(() -> new RequestNotFoundException("Friend not found"));
-            friendshipRepository.delete(friendship);
-            return new ResponseBody<>("OK");
-        } catch (Exception e) {
-            log.error("Error: " + e.getMessage());
-            throw new RequestNotFoundException("Error: " + e.getMessage());
-        }
-    }
-
-    @Override
-    public ResponseBody<?> userBlockOrUnlockFriend(String userCode, boolean isBlock) {
-        try{
-            Long userId = authUtils.getUserFromAuthentication().getId();
-            Users me = usersRepository.findById(userId)
-                    .orElseThrow(() -> new RequestNotFoundException("User not found"));
-            Users friend = usersRepository.findUsersByUserCode(userCode)
-                    .orElseThrow(() -> new RequestNotFoundException("Friend not found"));
-            Friendship friendship = friendshipRepository.findByUserAndFriendAndStatus(
-                    me, friend, Friendship.FriendshipStatus.ACCEPTED)
-                    .orElseThrow(() -> new RequestNotFoundException("Friend not found"));
-            if(isBlock){
-                friendship.setStatus(Friendship.FriendshipStatus.BLOCKED);
-            } else {
-                friendship.setStatus(Friendship.FriendshipStatus.ACCEPTED);
+                    return new ResponseBody<>("OK");
+                }
+                case "SEND_REQUEST" -> {
+                    Friendship friendship = new Friendship();
+                    friendship.setUser(me);
+                    friendship.setFriend(friend);
+                    friendship.setStatus(Friendship.FriendshipStatus.PENDING);
+                    friendship = friendshipRepository.save(friendship);
+                    notifyService.sendFriendshipNotifyToUser(Notifications.Type.FRIEND_REQUEST, me.getUserCode(),
+                            friend.getUserCode(), friendship.getUpdatedAt());
+                    return new ResponseBody<>("OK");
+                }
+                case "REMOVE_REQUEST" -> {
+                    friendshipRepository.deleteFriendShip(userId, userOtherId, Friendship.FriendshipStatus.PENDING);
+                    return new ResponseBody<>("OK");
+                }
+                case "REJECT_REQUEST" -> {
+                    friendshipRepository.deleteFriendShip(userOtherId, userId, Friendship.FriendshipStatus.PENDING);
+                    return new ResponseBody<>("OK");
+                }
+                case "UNFRIEND" -> {
+                    friendshipRepository.deleteFriendShip(userId, userOtherId, Friendship.FriendshipStatus.ACCEPTED);
+                    friendshipRepository.deleteFriendShip(userOtherId, userId, Friendship.FriendshipStatus.ACCEPTED);
+                    return new ResponseBody<>("OK");
+                }
+                case "BLOCK" -> {
+                    Friendship friendship = friendshipRepository.findByUserAndFriendAndStatus(
+                            me, friend, Friendship.FriendshipStatus.ACCEPTED)
+                            .orElseThrow(() -> new RequestNotFoundException("Friend not found"));
+                    friendship.setStatus(Friendship.FriendshipStatus.BLOCKED);
+                    friendshipRepository.save(friendship);
+                    Friendship friendship1 = friendshipRepository.findByUserAndFriendAndStatus(
+                            friend, me, Friendship.FriendshipStatus.ACCEPTED)
+                            .orElseThrow(() -> new RequestNotFoundException("Friend not found"));
+                    friendship1.setStatus(Friendship.FriendshipStatus.BLOCKED);
+                    friendshipRepository.save(friendship1);
+                    return new ResponseBody<>("OK");
+                }
+                case "UNBLOCK" -> {
+                    Friendship friendship = friendshipRepository.findByUserAndFriendAndStatus(
+                            me, friend, Friendship.FriendshipStatus.BLOCKED)
+                            .orElseThrow(() -> new RequestNotFoundException("Friend not found"));
+                    friendship.setStatus(Friendship.FriendshipStatus.ACCEPTED);
+                    friendshipRepository.save(friendship);
+                    Friendship friendship1 = friendshipRepository.findByUserAndFriendAndStatus(
+                            friend, me, Friendship.FriendshipStatus.BLOCKED)
+                            .orElseThrow(() -> new RequestNotFoundException("Friend not found"));
+                    friendship1.setStatus(Friendship.FriendshipStatus.ACCEPTED);
+                    friendshipRepository.save(friendship1);
+                    return new ResponseBody<>("OK");
+                }
+                default -> { return new ResponseBody<>("", ResponseBody.Status.SUCCESS, ResponseBody.Code.FORBIDDEN); }
             }
-            friendshipRepository.save(friendship);
-            Friendship friendship1 = friendshipRepository.findByUserAndFriendAndStatus(
-                    friend, me, Friendship.FriendshipStatus.ACCEPTED)
-                    .orElseThrow(() -> new RequestNotFoundException("Friend not found"));
-            if(isBlock){
-                friendship1.setStatus(Friendship.FriendshipStatus.BLOCKED);
-            } else {
-                friendship1.setStatus(Friendship.FriendshipStatus.ACCEPTED);
-            }
-            friendshipRepository.save(friendship1);
-            return new ResponseBody<>("OK");
-        } catch (Exception e) {
-            log.error("Error: " + e.getMessage());
-            throw new RequestNotFoundException("Error: " + e.getMessage());
-        }
-    }
-
-    @Override
-    public ResponseBody<?> getFriendsList(int pageNumber, int pageSize) {
-        try{
-            Long userId = authUtils.getUserFromAuthentication().getId();
-            Page<Users> page = friendshipRepository.findAllFriends(
-                    userId, PageRequest.of(pageNumber-1, pageSize));
-            List<UserShortDto> friends = page.stream()
-                    .map(users -> usersMapper.entityToUserShortDto(userId, users)).collect(Collectors.toList());
-            PageData<?> pageData = PageData.builder()
-                    .data(friends)
-                    .pageNumber(pageNumber)
-                    .pageSize(pageSize)
-                    .totalData(page.getTotalElements())
-                    .totalPage(page.getTotalPages())
-                    .build();
-            return new ResponseBody<>(friends);
-        } catch (Exception e) {
-            log.error("Error: " + e.getMessage());
-            throw new RequestNotFoundException("Error: " + e.getMessage());
-        }
-    }
-
-    @Override
-    public ResponseBody<?> getMutualFriendsList(Long userOtherId, int pageNumber, int pageSize) {
-        try{
-            Long userId = authUtils.getUserFromAuthentication().getId();
-            Page<Users> page = friendshipRepository.findMutualFriendsByPage(
-                    userId, userOtherId, PageRequest.of(pageNumber - 1, pageSize));
-            List<UserShortDto> userShortDtoList = page.stream()
-                    .map(users -> usersMapper.entityToUserShortDto(userId, users))
-                    .collect(Collectors.toList());
-            PageData<?> pageData = PageData.builder()
-                    .data(userShortDtoList)
-                    .totalPage(page.getTotalPages())
-                    .totalData(page.getTotalElements())
-                    .pageSize(pageSize)
-                    .pageNumber(pageNumber)
-                    .build();
-            return new ResponseBody<>(pageData);
         } catch (Exception e){
             log.error("Error: " + e.getMessage());
             throw new RequestNotFoundException("Error: " + e.getMessage());
@@ -236,12 +136,24 @@ public class IFriendshipService implements FriendshipService{
     }
 
     @Override
-    public ResponseBody<?> getListFriendRequestSendByMe(int pageNumber, int pageSize) {
+    @Transactional
+    public ResponseBody<?> getFriendshipList(String type, Long userOtherId, int pageNumber, int pageSize) {
         try{
             Long userId = authUtils.getUserFromAuthentication().getId();
-            Page<Users> page = friendshipRepository
-                    .getFriendRequestSendByMe(userId, PageRequest.of(pageNumber-1, pageSize,
-                            Sort.by(Sort.Order.desc("id"))));
+            Page<Users> page = switch (type) {
+                case "FRIEND" -> friendshipRepository.getAllFriendsOfMe(userId,
+                        PageRequest.of(pageNumber - 1, pageSize, Sort.by(Sort.Order.desc("id"))));
+                case "PENDING_BY_ME" -> friendshipRepository.getFriendRequestSendByMe(userId,
+                        PageRequest.of(pageNumber - 1, pageSize, Sort.by(Sort.Order.desc("id"))));
+                case "PENDING_TO_ME" -> friendshipRepository.getFriendRequestInviteMe(userId,
+                        PageRequest.of(pageNumber - 1, pageSize, Sort.by(Sort.Order.desc("id"))));
+                case "NONE_SUGGEST" -> friendshipRepository.getUsersNotInFriendship(userId,
+                        PageRequest.of(pageNumber - 1, pageSize, Sort.by(Sort.Order.desc("id"))));
+                case "MUTUAL_FRIEND" -> friendshipRepository.getListMutualFriends(userId, userOtherId,
+                        PageRequest.of(pageNumber - 1, pageSize, Sort.by(Sort.Order.desc("id"))));
+                case "BLOCK" -> friendshipRepository.getListUserBlock(userId, PageRequest.of(pageNumber - 1, pageSize, Sort.by(Sort.Order.desc("id"))));
+                default -> throw new RequestNotFoundException("Error! Type not found");
+            };
             PageData<?> pageData = PageData.builder()
                     .totalData(page.getTotalElements())
                     .totalPage(page.getTotalPages())
@@ -250,6 +162,7 @@ public class IFriendshipService implements FriendshipService{
                     .data(page.stream()
                             .map(users -> usersMapper.entityToUserShortDto(userId, users)).collect(Collectors.toList()))
                     .build();
+            return new ResponseBody<>(pageData, ResponseBody.Status.SUCCESS, ResponseBody.Code.SUCCESS);
         } catch (Exception e){
             log.error("Error: " + e.getMessage());
             throw new RequestNotFoundException("Error: " + e.getMessage());
@@ -257,28 +170,20 @@ public class IFriendshipService implements FriendshipService{
     }
 
     @Override
-    public ResponseBody<?> getListFriendRequestInviteMe(int pageMuber, int pageSize) {
-        return null;
-    }
-
-    @Override
-    public Long getMutualFriendCount(Long userOtherId) {
-        try{
-            Long userId = authUtils.getUserFromAuthentication().getId();
-            Long userCount = friendshipRepository.countMutualFriends(userId, userOtherId);
-            return userCount!=null ? userCount : 0L;
-        } catch (Exception e){
-            log.error("Error: " + e.getMessage());
-            throw new RequestNotFoundException("Error: " + e.getMessage());
-        }
-    }
-
-    @Override
-    public Long getFriendListCount() {
+    @Transactional
+    public Long getFriendshipCount(String type, Long userOtherId) {
         try {
-            Long userId = authUtils.getUserFromAuthentication().getId();
-            Long friendCount = friendshipRepository.countFriendOfUser(userId);
-            return friendCount!=null ? friendCount : 0L;
+            if(type.equals("FRIEND")){
+                Long userId = authUtils.getUserFromAuthentication().getId();
+                Long friendCount = friendshipRepository.countFriendOfUser(userId);
+                return friendCount != null ? friendCount : 0L;
+            } else if(type.equals("MUTUAL_FRIEND")){
+                Long userId = authUtils.getUserFromAuthentication().getId();
+                Long userCount = friendshipRepository.countMutualFriends(userId, userOtherId);
+                return userCount != null ? userCount : 0L;
+            } else{
+                throw new RequestNotFoundException("Error: Type not found!");
+            }
         } catch (Exception e){
             log.error("Error: " + e.getMessage());
             throw new RequestNotFoundException("Error: " + e.getMessage());

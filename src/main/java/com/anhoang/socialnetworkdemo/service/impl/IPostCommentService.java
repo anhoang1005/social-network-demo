@@ -1,12 +1,11 @@
 package com.anhoang.socialnetworkdemo.service.impl;
 
-import com.anhoang.socialnetworkdemo.entity.Post;
-import com.anhoang.socialnetworkdemo.entity.PostComment;
-import com.anhoang.socialnetworkdemo.entity.PostReaction;
-import com.anhoang.socialnetworkdemo.entity.Users;
+import com.anhoang.socialnetworkdemo.entity.*;
 import com.anhoang.socialnetworkdemo.exceptions.request.RequestNotFoundException;
 import com.anhoang.socialnetworkdemo.exceptions.users.UnauthorizedException;
 import com.anhoang.socialnetworkdemo.mapper.PostCommentMapper;
+import com.anhoang.socialnetworkdemo.model.notify.PostCommentNotifyDto;
+import com.anhoang.socialnetworkdemo.model.notify.PostNotifyDto;
 import com.anhoang.socialnetworkdemo.model.post.post_comment.PostCommentDto;
 import com.anhoang.socialnetworkdemo.model.post.post_comment.PostCommentRequest;
 import com.anhoang.socialnetworkdemo.payload.ResponseBody;
@@ -15,6 +14,7 @@ import com.anhoang.socialnetworkdemo.repository.PostReactionRepository;
 import com.anhoang.socialnetworkdemo.repository.PostRepository;
 import com.anhoang.socialnetworkdemo.repository.UsersRepository;
 import com.anhoang.socialnetworkdemo.service.FileService;
+import com.anhoang.socialnetworkdemo.service.NotificationService;
 import com.anhoang.socialnetworkdemo.service.PostCommentService;
 import com.anhoang.socialnetworkdemo.utils.AuthenticationUtils;
 import lombok.AllArgsConstructor;
@@ -41,6 +41,7 @@ public class IPostCommentService implements PostCommentService {
     private final FileService fileService;
     private final PostCommentMapper commentMapper;
     private final PostReactionRepository postReactionRepository;
+    private final NotificationService notifyService;
 
 
     @Override
@@ -89,10 +90,39 @@ public class IPostCommentService implements PostCommentService {
                 comment.setLever(parent.getLever() + 1);
                 comment = pcmRepository.save(comment);
                 pcmRepository.incrementChildrenCount(parent.getId());
+
+                String toUserCode = comment.getUsers().getUserCode();
+                if(!toUserCode.equals(authUtils.getUserFromAuthentication().getUserCode())){
+                    PostCommentNotifyDto postCommentNotifyDto = PostCommentNotifyDto.builder()
+                            .commentId(comment.getId())
+                            .commentContent(comment.getContent())
+                            .reaction(null)
+                            .actionUserCode(users.getUserCode())
+                            .actionUsername(users.getFullName())
+                            .actionUserAvatar(users.getAvatar())
+                            .build();
+                    notifyService.sendPostCommentNotifyToUser(Notifications.Type.REPLY_COMMENT,
+                            comment.getUsers().getUserCode(),
+                            comment.getId(), postCommentNotifyDto, comment.getUpdatedAt());
+                }
             } else {
                 comment.setCommentParent(null);
                 comment.setLever(0);
                 comment = pcmRepository.save(comment);
+
+                String toUserCode = post.getUsers().getUserCode();
+                if(!toUserCode.equals(userCode)){
+                    PostNotifyDto postNotifyDto = PostNotifyDto.builder()
+                            .postId(post.getId()).postContent(post.getContent())
+                            .myReaction(null).myComment(comment.getContent())
+                            .actionUserCode(userCode)
+                            .actionUsername(users.getFullName())
+                            .actionUserAvatar(users.getAvatar())
+                            .build();
+                    notifyService.sendPostNotifyToUser(Notifications.Type.COMMENT_POST,
+                            post.getUsers().getUserCode(), post.getId(),
+                            postNotifyDto, comment.getUpdatedAt());
+                }
             }
             return new ResponseBody<>(commentMapper.entityToDto(comment, false), ResponseBody.Status.SUCCESS, ResponseBody.Code.SUCCESS);
         }catch (Exception e){
@@ -145,6 +175,7 @@ public class IPostCommentService implements PostCommentService {
     public ResponseBody<?> userReactionComment(Long commentId, PostReaction.Reaction reaction) {
         try{
             Long userId = authUtils.getUserFromAuthentication().getId();
+            String userCode = authUtils.getUserFromAuthentication().getUserCode();
             Users users = usersRepository.findById(userId)
                     .orElseThrow(()-> new RequestNotFoundException("ERROR"));
             PostComment comment = pcmRepository.findById(commentId)
@@ -165,7 +196,21 @@ public class IPostCommentService implements PostCommentService {
                 postReaction.setUsers(users);
                 postReaction.setReaction(reaction);
                 postReaction.setPostComment(comment);
-                postReactionRepository.save(postReaction);
+                postReaction = postReactionRepository.save(postReaction);
+
+                String toUserCode = comment.getUsers().getUserCode();
+                if(!toUserCode.equals(userCode)){
+                    PostCommentNotifyDto postCommentNotifyDto = PostCommentNotifyDto.builder()
+                            .commentId(comment.getId())
+                            .commentContent(comment.getContent())
+                            .reaction(reaction)
+                            .actionUserCode(users.getUserCode())
+                            .actionUsername(users.getFullName())
+                            .actionUserAvatar(users.getAvatar())
+                            .build();
+                    notifyService.sendPostCommentNotifyToUser(Notifications.Type.REPLY_COMMENT, comment.getUsers().getUserCode(),
+                            commentId, postCommentNotifyDto, postReaction.getUpdatedAt());
+                }
             }
             return new ResponseBody<>("", ResponseBody.Status.SUCCESS, ResponseBody.Code.SUCCESS);
         } catch (Exception e){

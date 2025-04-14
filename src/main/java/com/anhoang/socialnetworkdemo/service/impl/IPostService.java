@@ -6,6 +6,7 @@ import com.anhoang.socialnetworkdemo.exceptions.users.UnauthorizedException;
 import com.anhoang.socialnetworkdemo.mapper.MediaFileMapper;
 import com.anhoang.socialnetworkdemo.mapper.PostMapper;
 import com.anhoang.socialnetworkdemo.model.media.MediaFormat;
+import com.anhoang.socialnetworkdemo.model.notify.PostNotifyDto;
 import com.anhoang.socialnetworkdemo.model.post.PostDto;
 import com.anhoang.socialnetworkdemo.model.post.PostRequest;
 import com.anhoang.socialnetworkdemo.payload.PageData;
@@ -16,6 +17,7 @@ import com.anhoang.socialnetworkdemo.repository.PostRepository;
 import com.anhoang.socialnetworkdemo.repository.UsersRepository;
 import com.anhoang.socialnetworkdemo.service.FileService;
 import com.anhoang.socialnetworkdemo.service.GeminiService;
+import com.anhoang.socialnetworkdemo.service.NotificationService;
 import com.anhoang.socialnetworkdemo.service.PostService;
 import com.anhoang.socialnetworkdemo.utils.AuthenticationUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -49,6 +51,7 @@ public class IPostService implements PostService {
     private final ObjectMapper objectMapper;
     private final PostReactionRepository postReactionRepository;
     private final GeminiService geminiService;
+    private final NotificationService notifyService;
 
     @Override
     @Transactional
@@ -251,6 +254,21 @@ public class IPostService implements PostService {
             sharedPost.setLocation(req.getLocation());
             sharedPost.setStatus(Post.Status.NORMAL);
             sharedPost = postRepository.save(sharedPost);
+
+            String toUserCode = originalPost.getUsers().getUserCode();
+            if(!toUserCode.equals(userCode)){
+                PostNotifyDto postNotifyDto = PostNotifyDto.builder()
+                        .postId(originalPost.getId()).postContent(originalPost.getContent())
+                        .myReaction(null).myComment(null)
+                        .actionUserCode(userCode)
+                        .actionUsername(user.getFullName())
+                        .actionUserAvatar(user.getAvatar())
+                        .build();
+                notifyService.sendPostNotifyToUser(Notifications.Type.SHARE_POST,
+                        originalPost.getUsers().getUserCode(), originalPost.getId(),
+                        postNotifyDto, sharedPost.getCreatedAt());
+            }
+
             return new ResponseBody<>(postMapper.entityToPostDto(sharedPost, userCode),
                     ResponseBody.Status.SUCCESS, ResponseBody.Code.SUCCESS);
         } catch (Exception e){
@@ -343,15 +361,30 @@ public class IPostService implements PostService {
                     postRepository.updatePostLikeCount(postId, false);
                 } else {
                     postReaction.setReaction(reaction);
-                    postReactionRepository.save(postReaction);
+                    postReaction = postReactionRepository.save(postReaction);
                 }
             } else{
                 postReaction = new PostReaction();
                 postReaction.setPost(post);
                 postReaction.setUsers(users);
                 postReaction.setReaction(reaction);
-                postReactionRepository.save(postReaction);
+                postReaction = postReactionRepository.save(postReaction);
                 postRepository.updatePostLikeCount(postId, true);
+
+                String toUserCode = post.getUsers().getUserCode();
+                if(!toUserCode.equals(userCode)) {
+                    PostNotifyDto postNotifyDto = PostNotifyDto.builder()
+                            .postId(post.getId()).postContent(post.getContent())
+                            .myReaction(postReaction.getReaction()).myComment(null)
+                            .actionUserCode(userCode)
+                            .actionUsername(users.getFullName())
+                            .actionUserAvatar(users.getAvatar())
+                            .build();
+                    notifyService.sendPostNotifyToUser(Notifications.Type.REACTION_POST,
+                            post.getUsers().getUserCode(), post.getId(),
+                            postNotifyDto, postReaction.getUpdatedAt());
+                }
+
             }
             return new ResponseBody<>("", ResponseBody.Status.SUCCESS, ResponseBody.Code.SUCCESS);
         }catch (Exception e){
