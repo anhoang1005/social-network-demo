@@ -31,6 +31,9 @@ public class Notifications implements Serializable {
     @Column(nullable = false)
     private String content;
 
+    @Column(nullable = true)
+    private PostReaction.Reaction reaction;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private Users user;

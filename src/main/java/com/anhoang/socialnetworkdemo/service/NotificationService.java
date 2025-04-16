@@ -31,7 +31,7 @@ public interface NotificationService {
                                      PostCommentNotifyDto postCommentNotifyDto,
                                      LocalDateTime createdAt);
 
-    ResponseBody<?> userGetNotifyList();
+    ResponseBody<?> userGetNotifyList(int pageNumber, int pageSize);
 
     ResponseBody<?> userGetInfoData();
 }

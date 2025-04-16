@@ -5,6 +5,7 @@ import com.anhoang.socialnetworkdemo.exceptions.request.RequestNotFoundException
 import com.anhoang.socialnetworkdemo.model.notify.PostCommentNotifyDto;
 import com.anhoang.socialnetworkdemo.model.notify.PostNotifyDto;
 import com.anhoang.socialnetworkdemo.model.notify.UserNotifyDto;
+import com.anhoang.socialnetworkdemo.payload.PageData;
 import com.anhoang.socialnetworkdemo.payload.ResponseBody;
 import com.anhoang.socialnetworkdemo.payload.socket_payload.NotificationData;
 import com.anhoang.socialnetworkdemo.payload.socket_payload.SocketBody;
@@ -13,15 +14,20 @@ import com.anhoang.socialnetworkdemo.repository.PostCommentRepository;
 import com.anhoang.socialnetworkdemo.repository.PostRepository;
 import com.anhoang.socialnetworkdemo.repository.UsersRepository;
 import com.anhoang.socialnetworkdemo.service.NotificationService;
+import com.anhoang.socialnetworkdemo.utils.AuthenticationUtils;
 import com.anhoang.socialnetworkdemo.utils.TimeMapperUtils;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -32,6 +38,7 @@ public class INotificationService implements NotificationService {
     private final NotificationRepository notifyRepository;
     private final PostRepository postRepository;
     private final PostCommentRepository commentRepository;
+    private final AuthenticationUtils authUtils;
 
     public NotificationData entityToNotifyData(Notifications notify, Object targetData){
         return NotificationData.builder()
@@ -144,6 +151,7 @@ public class INotificationService implements NotificationService {
             notify.setIsRead(false);
             notify.setUser(user);
             notify.setPost(post);
+            notify.setReaction(postNotifyDto.getMyReaction()!=null ? postNotifyDto.getMyReaction() : null);
             notify.setCreatedAt(createdAt);
             notify.setUpdatedAt(createdAt);
             notify = notifyRepository.save(notify);
@@ -182,6 +190,7 @@ public class INotificationService implements NotificationService {
             notify.setIsRead(false);
             notify.setUser(user);
             notify.setPostComment(postComment);
+            notify.setReaction(postCommentNotifyDto.getReaction()!=null ? postCommentNotifyDto.getReaction() : null);
             notify.setCreatedAt(createdAt);
             notify.setUpdatedAt(createdAt);
             notify = notifyRepository.save(notify);
@@ -197,8 +206,69 @@ public class INotificationService implements NotificationService {
     }
 
     @Override
-    public ResponseBody<?> userGetNotifyList() {
-        return null;
+    @Transactional
+    public ResponseBody<?> userGetNotifyList(int pageNumber, int pageSize) {
+        try{
+            Long userId = authUtils.getUserFromAuthentication().getId();
+            Page<Notifications> page = notifyRepository.getNotificationOfUser(userId,
+                    PageRequest.of(pageNumber-1, pageSize, Sort.by(Sort.Order.desc("createdAt"))));
+            PageData<?> pageData = PageData.builder()
+                    .pageSize(pageSize)
+                    .pageNumber(pageNumber)
+                    .totalPage(page.getTotalPages())
+                    .totalData(page.getTotalElements())
+                    .data(page.stream().map(this::mapNotifyToData).collect(Collectors.toList()))
+                    .build();
+            return new ResponseBody<>(pageData, ResponseBody.Status.SUCCESS, ResponseBody.Code.SUCCESS);
+        } catch (Exception e){
+            log.error("Get notification Error!");
+            throw new RequestNotFoundException("Error");
+        }
+    }
+
+    public NotificationData mapNotifyToData(Notifications notify){
+        if(notify.getType()==Notifications.Type.REACTION_POST
+                || notify.getType()==Notifications.Type.COMMENT_POST
+                || notify.getType()==Notifications.Type.SHARE_POST){
+            Post post = notify.getPost();
+            Users user = post.getUsers();
+            PostNotifyDto postNotifyDto = PostNotifyDto.builder()
+                    .postId(post.getId())
+                    .postContent(post.getContent())
+                    .myComment(null)
+                    .myReaction(notify.getReaction())
+                    .actionUserCode(user.getUserCode())
+                    .actionUsername(user.getFullName())
+                    .actionUserAvatar(user.getAvatar())
+                    .build();
+            return entityToNotifyData(notify, postNotifyDto);
+        } else if(notify.getType()==Notifications.Type.FRIEND_REQUEST
+                || notify.getType()==Notifications.Type.FRIEND_ACCEPTED
+                || notify.getType()==Notifications.Type.FOLLOW_REQUEST){
+            Users user = notify.getSenderUser();
+            UserNotifyDto userNotifyDto = UserNotifyDto.builder()
+                    .actionUserId(user.getId())
+                    .actionUserCode(user.getUserCode())
+                    .actionUsername(user.getFullName())
+                    .actionUserAvatar(user.getAvatar())
+                    .build();
+            return entityToNotifyData(notify, userNotifyDto);
+        } else if(notify.getType()==Notifications.Type.REACTION_COMMENT
+                || notify.getType()==Notifications.Type.REPLY_COMMENT){
+            PostComment postComment = notify.getPostComment();
+            Users user = postComment.getUsers();
+            PostCommentNotifyDto postCommentNotifyDto = PostCommentNotifyDto.builder()
+                    .actionUserCode(user.getUserCode())
+                    .actionUsername(user.getFullName())
+                    .actionUserAvatar(user.getAvatar())
+                    .commentId(postComment.getId())
+                    .commentContent(postComment.getContent())
+                    .reaction(notify.getReaction())
+                    .build();
+            return entityToNotifyData(notify, postCommentNotifyDto);
+        } else {
+            return entityToNotifyData(notify, null);
+        }
     }
 
     @Override
