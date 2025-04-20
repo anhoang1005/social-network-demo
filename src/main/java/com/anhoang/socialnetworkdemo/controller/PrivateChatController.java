@@ -1,6 +1,7 @@
 package com.anhoang.socialnetworkdemo.controller;
 
 import com.anhoang.socialnetworkdemo.payload.socket_payload.MessageData;
+import com.anhoang.socialnetworkdemo.payload.socket_payload.SignalData;
 import com.anhoang.socialnetworkdemo.payload.socket_payload.SocketBody;
 import com.anhoang.socialnetworkdemo.service.ConversationService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -50,22 +51,37 @@ public class PrivateChatController {
         return message;
     }
 
-//    private final SimpUserRegistry simpUserRegistry;
-//
-//    public void sendMessageToUser(String userCode, String message, List<String> userMembers) {
-//        for (String member : userMembers) {
-//            if (!member.equals(userCode)) {
-//                SimpUser user = simpUserRegistry.getUser(member);
-//                if (!user.getSessions().isEmpty()) {
-//                    // User có session đang hoạt động -> gửi tin nhắn
-//                    messagingTemplate.convertAndSendToUser(member, "/queue/private", message);
-//                    System.out.println("Da gui tin nhan cho: " + member);
-//                } else {
-//                    // Không tìm thấy sessionId
-//                    System.out.println("❌ Không tìm thấy sessionId của user: " + member);
-//                }
-//            }
-//        }
-//    }
+
+    @MessageMapping("/chat.sendSignal/{conversation_topic}")
+    public SignalData sendCallSignalingData(@Payload SignalData signal,
+                                            @DestinationVariable("conversation_topic") String conversationTopic,
+                                            SimpMessageHeaderAccessor accessor) {
+        String userCode = accessor.getSessionAttributes().get("user_code").toString();
+        SocketBody<?> messageSocket = SocketBody.builder()
+                .type(SocketBody.Type.CALL)
+                .body(signal).createdAt(null).build();
+        List<String> userMembers = conversationService.systemGetListMemberOfConversation(Long.valueOf(conversationTopic));
+        if (signal.getType()== SignalData.Type.OFFER){
+            for (String member : userMembers) {
+                if(!member.equals(userCode)) {
+                    messagingTemplate.convertAndSendToUser(member, "/queue/private", messageSocket);
+                }
+            }
+        } else if(signal.getType()== SignalData.Type.ANSWER){
+            for (String member : userMembers) {
+                if(!member.equals(userCode)) {
+                    messagingTemplate.convertAndSendToUser(member, "/queue/private", messageSocket);
+                }
+            }
+        } else{
+            for (String member : userMembers) {
+                if(!member.equals(userCode)) {
+                    messagingTemplate.convertAndSendToUser(member, "/queue/private", messageSocket);
+                }
+            }
+        }
+        return signal;
+    }
+    //Lam sao de khi nhung nguoi da chon chap nhan cuoc goi thi se chuyen den 1 topic rieng de lang nghe cuoc goi
 
 }

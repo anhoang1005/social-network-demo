@@ -38,9 +38,10 @@ public class IFakeService implements FakeService {
             Roles customer = roleRepository.findRolesByRoleName(Roles.BaseRole.USER).orElseThrow(() ->
                     new RuntimeException("Role CUSTOMER not found"));
             for (int i = 0; i < 20; i++) {
+                String avatarUrl = "https://randomuser.me/api/portraits/men/" + (i+1) + ".jpg";
                 Users user = new Users();
                 user.setFullName(faker.name().fullName());
-                user.setAvatar(Constant.USER_IMAGE);
+                user.setAvatar(avatarUrl);
                 user.setCoverImage(Constant.USER_IMAGE);
                 user.setDob(faker.date().birthday().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate());
                 user.setGender(faker.options().option(Users.Gender.class));
@@ -70,7 +71,7 @@ public class IFakeService implements FakeService {
             for (int i = 0; i < 2; i++) {
                 Users user = new Users();
                 user.setFullName(faker.name().fullName());
-                user.setAvatar(Constant.USER_IMAGE);
+                user.setAvatar("https://randomuser.me/api/portraits/men/50.jpg");
                 user.setCoverImage(Constant.USER_IMAGE);
                 user.setDob(faker.date().birthday().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate());
                 user.setGender(faker.options().option(Users.Gender.class));

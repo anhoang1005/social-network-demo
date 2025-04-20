@@ -16,6 +16,7 @@ public class SocketBody<T> {
 
     public enum Type{
         MESSAGE,
-        NOTIFY
+        NOTIFY,
+        CALL
     }
 }

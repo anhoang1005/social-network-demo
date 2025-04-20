@@ -226,6 +226,19 @@ public class INotificationService implements NotificationService {
         }
     }
 
+    @Override
+    @Transactional
+    public ResponseBody<?> userTickReadAllNotification() {
+        try{
+            Long userId = authUtils.getUserFromAuthentication().getId();
+            notifyRepository.userTickReadAllNotification(userId);
+            return new ResponseBody<>("", ResponseBody.Status.SUCCESS,  ResponseBody.Code.SUCCESS);
+        } catch (Exception e){
+            log.error("Tick notification Error!");
+            throw new RequestNotFoundException("Error");
+        }
+    }
+
     public NotificationData mapNotifyToData(Notifications notify){
         if(notify.getType()==Notifications.Type.REACTION_POST
                 || notify.getType()==Notifications.Type.COMMENT_POST

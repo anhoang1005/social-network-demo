@@ -33,5 +33,7 @@ public interface NotificationService {
 
     ResponseBody<?> userGetNotifyList(int pageNumber, int pageSize);
 
+    ResponseBody<?> userTickReadAllNotification();
+
     ResponseBody<?> userGetInfoData();
 }
