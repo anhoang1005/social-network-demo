@@ -20,9 +20,12 @@ public class UsersMapper {
     private final FriendshipRepository friendshipRepository;
 
     public UsersDetailResponse entityToUsersDetailResponse(Users entity){
+        Long friendCount = friendshipRepository.countFriendOfUser(entity.getId());
         return UsersDetailResponse.builder()
+                .userId(entity.getId())
                 .userCode(entity.getUserCode())
                 .avatar(entity.getAvatar())
+                .coverImage(entity.getCoverImage())
                 .fullName(entity.getFullName())
                 .gender(entity.getGender().name())
                 .dob(TimeMapperUtils.localDateToString(entity.getDob()))
@@ -34,6 +37,8 @@ public class UsersMapper {
                 .createdAt(TimeMapperUtils.localDateTimeToString(entity.getCreatedAt()))
                 .modifiedAt(TimeMapperUtils.localDateTimeToString(entity.getUpdatedAt()))
                 .modifiedBy(entity.getUpdatedBy())
+                .bio(entity.getBio())
+                .friendCount(friendCount!=null ? friendCount : 0L)
                 .build();
     }
 

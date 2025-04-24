@@ -116,6 +116,7 @@ public class IPostService implements PostService {
             post.setVisibility(req.getVisibility());
             post.setLocation(req.getLocation());
             post.setStatus(Post.Status.NORMAL);
+            post.setPostType(Post.PostType.NORMAL_POST);
 
             List<Hashtag> existingHashTags = hashTagRepository.findHashtagByNameIn(req.getHashTag());
             Set<String> existingHashTagNames = existingHashTags.stream()
@@ -245,6 +246,7 @@ public class IPostService implements PostService {
                     .orElseThrow(() -> new RequestNotFoundException("Post not found with ID: " + req.getSharedId()));
             Post sharedPost = new Post();
             sharedPost.setContent(req.getContent());
+            sharedPost.setPostType(Post.PostType.NORMAL_POST);
             sharedPost.setIsShared(true);
             sharedPost.setSharedPost(originalPost);
             Users user = usersRepository.findUsersByUserCode(userCode)
@@ -415,4 +417,88 @@ public class IPostService implements PostService {
             throw new RequestNotFoundException("ERROR");
         }
     }
+
+    @Override
+    public ResponseBody<?> userCreateChangeAvatarPost(PostRequest req, MultipartFile file) {
+        try{
+            String userCode = authUtils.getUserFromAuthentication().getUserCode();
+            Users users = usersRepository.findUsersByUserCode(userCode)
+                    .orElseThrow(() -> new RequestNotFoundException("User not found!"));
+            Post post = new Post();
+            post.setUsers(users);
+            post.setIsShared(false);
+            post.setContent(req.getContent());
+            post.setVisibility(req.getVisibility());
+            post.setLocation(req.getLocation());
+            post.setStatus(Post.Status.NORMAL);
+            post.setPostType(Post.PostType.AVATAR_POST);
+            post.setHashtag(null);
+            post.setHashtags(null);
+            post = postRepository.save(post);
+
+            MediaFile mediaFile = new MediaFile();
+            MediaFormat mediaFormat = MediaFileMapper.getFormatOfFile(file);
+            ResponseBody<?> upload = fileService.uploadToCloudinary(file);
+            mediaFile.setUrl(upload.getData().toString());
+            mediaFile.setFileName(file.getOriginalFilename());
+            mediaFile.setMediaFormat(mediaFormat.getFormat());
+            mediaFile.setMediaType(mediaFormat.getMediaType());
+            mediaFile.setAccessLevel(MediaFile.AccessLevel.PUBLIC);
+            mediaFile.setFileSize(file.getSize());
+            mediaFile.setPost(post);
+            mediaFile.setUsersUpdated(users);
+            post.setMediaFiles(List.of(mediaFile));
+            post = postRepository.save(post);
+            users.setAvatar(upload.getData().toString());
+            usersRepository.save(users);
+            return new ResponseBody<>(upload.getData().toString(),
+                    ResponseBody.Status.SUCCESS, ResponseBody.Code.SUCCESS);
+        } catch (Exception e){
+            log.error("Get post detail error! Error: {}", e.getMessage());
+            throw new RequestNotFoundException("ERROR");
+        }
+    }
+
+    @Override
+    public ResponseBody<?> userCreateChangeCoverImagePost(PostRequest req, MultipartFile file) {
+        try{
+            String userCode = authUtils.getUserFromAuthentication().getUserCode();
+            Users users = usersRepository.findUsersByUserCode(userCode)
+                    .orElseThrow(() -> new RequestNotFoundException("User not found!"));
+            Post post = new Post();
+            post.setUsers(users);
+            post.setIsShared(false);
+            post.setContent(req.getContent());
+            post.setVisibility(req.getVisibility());
+            post.setLocation(req.getLocation());
+            post.setStatus(Post.Status.NORMAL);
+            post.setPostType(Post.PostType.COVER_POST);
+            post.setHashtag(null);
+            post.setHashtags(null);
+            post = postRepository.save(post);
+
+            MediaFile mediaFile = new MediaFile();
+            MediaFormat mediaFormat = MediaFileMapper.getFormatOfFile(file);
+            ResponseBody<?> upload = fileService.uploadToCloudinary(file);
+            mediaFile.setUrl(upload.getData().toString());
+            mediaFile.setFileName(file.getOriginalFilename());
+            mediaFile.setMediaFormat(mediaFormat.getFormat());
+            mediaFile.setMediaType(mediaFormat.getMediaType());
+            mediaFile.setAccessLevel(MediaFile.AccessLevel.PUBLIC);
+            mediaFile.setFileSize(file.getSize());
+            mediaFile.setPost(post);
+            mediaFile.setUsersUpdated(users);
+            post.setMediaFiles(List.of(mediaFile));
+            post = postRepository.save(post);
+            users.setCoverImage(upload.getData().toString());
+            usersRepository.save(users);
+            return new ResponseBody<>(upload.getData().toString(),
+                    ResponseBody.Status.SUCCESS, ResponseBody.Code.SUCCESS);
+        } catch (Exception e){
+            log.error("Get post detail error! Error: {}", e.getMessage());
+            throw new RequestNotFoundException("ERROR");
+        }
+    }
+
+
 }

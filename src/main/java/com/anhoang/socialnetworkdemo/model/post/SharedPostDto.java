@@ -1,6 +1,7 @@
 package com.anhoang.socialnetworkdemo.model.post;
 
 import com.anhoang.socialnetworkdemo.entity.MediaFile;
+import com.anhoang.socialnetworkdemo.entity.Post;
 import com.anhoang.socialnetworkdemo.model.media.MediaDto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
@@ -21,6 +22,8 @@ public class SharedPostDto {
     private String sharedPostAvatar;
     @JsonProperty("shared_post_name")
     private String sharedPostName;
+    @JsonProperty("shared_post_type")
+    private Post.PostType sharedPostType;
     @JsonProperty("content")
     private String content;
     @JsonProperty("media_files")

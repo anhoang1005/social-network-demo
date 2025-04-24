@@ -12,6 +12,8 @@ public interface UsersService {
 
     ResponseBody<?> usersChangeAvatar(MultipartFile file);
 
+    ResponseBody<?> usersChangeCoverImage(MultipartFile file);
+
     ResponseBody<?> usersGetUsersDetailResponse();
 
     ResponseBody<?> rootChangeRoleUsers(String userCode, boolean isAdmin);

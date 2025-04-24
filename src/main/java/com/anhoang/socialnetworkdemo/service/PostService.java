@@ -23,4 +23,7 @@ public interface PostService {
     ResponseBody<?> useReactionPost(Long postId, PostReaction.Reaction reaction);
 
     ResponseBody<?> userGetPostDetail(Long postId);
+
+    ResponseBody<?> userCreateChangeAvatarPost(PostRequest req, MultipartFile file);
+    ResponseBody<?> userCreateChangeCoverImagePost(PostRequest req, MultipartFile file);
 }

@@ -32,6 +32,10 @@ public class Post extends BaseEntity<Long> {
     @Column(nullable = false)
     private Visibility visibility;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private PostType postType;
+
     @Column(nullable = false)
     private Boolean isShared;
 
@@ -94,6 +98,13 @@ public class Post extends BaseEntity<Long> {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private Users users;
+
+    public enum PostType{
+        AVATAR_POST,
+        COVER_POST,
+        NORMAL_POST,
+        GROUP_POST
+    }
 
     public enum Visibility{
         PUBLIC,

@@ -54,6 +54,7 @@ public class PostMapper {
         dto.setHashTag(post.getHashtag() != null ? convertFromJson(post.getHashtag()): null);
         dto.setLocation(post.getLocation()!=null ? post.getLocation() : null);
         dto.setStatus(post.getStatus());
+        dto.setPostType(post.getPostType());
         dto.setLikeCount(postRepository.countReactionsByPostId(post.getId()));
         dto.setCommentCount(postRepository.countCommentsByPostId(post.getId()));
         dto.setSharedCount(postRepository.countSharesByPostId(post.getId()));
@@ -100,6 +101,7 @@ public class PostMapper {
         dto.setCreatedAt(TimeMapperUtils.formatFacebookTime(post.getCreatedAt()));
         dto.setSharedPostAvatar(users.getAvatar());
         dto.setSharedPostName(users.getFullName());
+        dto.setSharedPostType(post.getPostType());
         dto.setLikeCount(postRepository.countReactionsByPostId(post.getId()));
         dto.setCommentCount(postRepository.countCommentsByPostId(post.getId()));
         dto.setSharedCount(postRepository.countSharesByPostId(post.getId()));

@@ -32,12 +32,6 @@ public class UsersController {
         return ResponseEntity.ok(usersService.usersChangeUserInfo(userInfo));
     }
 
-    @PutMapping("/api/user/users/change-avatar")
-    public ResponseEntity<?> userChangeImageUrlApi(
-            @RequestParam("file") MultipartFile file){
-        return ResponseEntity.ok(usersService.usersChangeAvatar(file));
-    }
-
     @PutMapping("/api/root/users/change-admin")
     public ResponseEntity<?> rootChangeAdminRoleApi(
             @RequestParam("user_code") String userCode,

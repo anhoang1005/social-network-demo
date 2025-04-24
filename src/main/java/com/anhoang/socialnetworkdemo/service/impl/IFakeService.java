@@ -143,6 +143,7 @@ public class IFakeService implements FakeService {
                     post.setVisibility(faker.options().option(Post.Visibility.class));
                     post.setLocation(faker.address().fullAddress());
                     post.setStatus(Post.Status.NORMAL);
+                    post.setPostType(Post.PostType.NORMAL_POST);
                     post.setHashtags(null);
                     post.setHashtag(null);
 

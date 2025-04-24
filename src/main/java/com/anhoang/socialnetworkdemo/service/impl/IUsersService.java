@@ -84,6 +84,17 @@ public class IUsersService implements UsersService {
     }
 
     @Override
+    public ResponseBody<?> usersChangeCoverImage(MultipartFile file) {
+        String userCode = authenticationUtils.getUserFromAuthentication().getUserCode();
+        Users user = usersRepository.findUsersByUserCode(userCode)
+                .orElseThrow(() -> new RequestNotFoundException("ERROR"));
+        ResponseBody<?> responseImage = fileService.uploadToCloudinary(file);
+        user.setCoverImage(responseImage.getData().toString());
+        usersRepository.save(user);
+        return new ResponseBody<>(responseImage.getData().toString(), ResponseBody.Status.SUCCESS, ResponseBody.Code.SUCCESS);
+    }
+
+    @Override
     public ResponseBody<?> usersGetUsersDetailResponse() {
         String userCode = authenticationUtils.getUserFromAuthentication().getUserCode();
         Users usersEntity = usersRepository.findUsersByUserCode(userCode)

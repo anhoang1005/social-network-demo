@@ -22,6 +22,8 @@ public class PostDto {
     private String postRole;
     @JsonProperty("post_avatar")
     private String postAvatar;
+    @JsonProperty("post_type")
+    private Post.PostType postType;
     @JsonProperty("post_name")
     private String postName;
     @JsonProperty("user_code")
