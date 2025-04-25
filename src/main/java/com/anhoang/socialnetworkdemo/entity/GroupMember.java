@@ -22,11 +22,14 @@ public class GroupMember extends BaseEntity<Long>{
     private Users user;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private Role role; // Quyền của thành viên
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private MemberStatus status; // Trạng thái tham gia nhóm
 
+    @Column(nullable = true)
     private LocalDateTime joinedAt;
 
     public enum Role {

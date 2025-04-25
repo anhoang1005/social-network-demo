@@ -22,7 +22,7 @@ public class Group extends BaseEntity<Long>{
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private GroupType groupType;
-    @Column(length = 500)
+    @Column(nullable = false)
     private Boolean isSecretGroup;
     @Column(columnDefinition = "TEXT")
     private String description;
@@ -33,15 +33,24 @@ public class Group extends BaseEntity<Long>{
     private List<Post> posts = new ArrayList<>();
 
     @Column(nullable = false)
-    private boolean requiresApproval; // Cần phê duyệt khi thành viên muốn tham gia?
+    private Boolean requiresApproval; // Cần phê duyệt khi thành viên muốn tham gia?
     @Column(nullable = false)
-    private boolean allowMembersToPost; // Cho phép thành viên đăng bài?
+    private Boolean allowMembersToPost; // Cho phép thành viên đăng bài?
     @Column(nullable = false)
-    private boolean allowComments; // Cho phép bình luận không?
+    private Boolean allowComments; // Cho phép bình luận không?
     @Column(nullable = false)
-    private boolean allowNotifications; // Có gửi thông báo nhóm không?
+    private Boolean allowNotifications; // Có gửi thông báo nhóm không?
+
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private boolean isDeleted = false; // Trạng thái nhóm
+    private GroupStatus groupStatus;
+
+
+    public enum GroupStatus{
+        NORMAL,
+        DELETED,
+        BLOCK
+    }
 
     public enum GroupType {
         PUBLIC,
