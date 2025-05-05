@@ -15,6 +15,18 @@ import java.util.Optional;
 @Repository
 public interface ConversationRepository extends JpaRepository<Conversation, Long> {
 
+        @Query("""
+        SELECT c FROM Conversation c
+        JOIN c.members m1
+        JOIN c.members m2
+        WHERE c.type = 'PRIVATE'
+          AND m1.users.userCode = :userCode1
+          AND m2.users.userCode = :userCode2
+          AND SIZE(c.members) = 2
+        """)
+        Optional<Conversation> findPrivateConversationBetween(String userCode1, String userCode2);
+
+
     @Query("SELECT DISTINCT c FROM Conversation c " +
             "JOIN c.members cm " +
             "WHERE cm.users.id = :userId")

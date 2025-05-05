@@ -36,7 +36,8 @@ public class Friendship extends BaseEntity<Long> implements Serializable {
     public enum FriendshipStatus {
         PENDING,  // Chỉ 1 bản ghi
         ACCEPTED, // 2 bản ghi (2 chiều)
-        BLOCKED   // Chỉ 1 bản ghi
+        BLOCKED,   // Chỉ 1 bản ghi
+        FOLLOW
     }
 
 }

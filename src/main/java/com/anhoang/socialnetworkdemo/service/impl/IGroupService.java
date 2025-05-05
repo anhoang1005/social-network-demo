@@ -67,18 +67,59 @@ public class IGroupService implements GroupService {
     }
 
     @Override
-    public ResponseEntity<?> userUpdateGroup() {
-        return null;
+    public ResponseBody<?> userUpdateGroup(CreateGroupRequest request) {
+        try{
+            String userCode = authUtils.getUserFromAuthentication().getUserCode();
+            Group group = new Group();
+            group.setGroupAvatar(Constant.BAC_IMAGE);
+            group.setGroupName(request.getGroupName());
+            group.setDescription(request.getGroupDes());
+            group.setIsSecretGroup(request.getIsSecretGroup());
+            group.setGroupType(request.getGroupType());
+            group.setRequiresApproval(request.isRequiresApproval());
+            group.setAllowMembersToPost(request.isAllowMembersToPost());
+            group.setAllowComments(request.isAllowComments());
+            group.setAllowNotifications(request.isAllowNotifications());
+            group.setGroupStatus(Group.GroupStatus.NORMAL);
+            group = groupRepository.save(group);
+            return new ResponseBody<>(groupMapper.entityToGroupDto(group),
+                    ResponseBody.Status.SUCCESS, ResponseBody.Code.SUCCESS);
+        } catch (Exception e){
+            log.error("create group error!");
+            throw new RequestNotFoundException("Error");
+        }
     }
 
     @Override
-    public ResponseEntity<?> userDeleteGroup() {
-        return null;
+    public ResponseBody<?> userDeleteGroup(Long groupId) {
+        try{
+            Long userId  = authUtils.getUserFromAuthentication().getId();
+            GroupMember admin = groupMemberRepository.searchGroupByRoleAndUserId(groupId, userId, GroupMember.Role.ADMIN)
+                    .orElseThrow(()-> new RequestNotFoundException("member not found!"));
+            Group group = admin.getGroup();
+            group.setGroupStatus(Group.GroupStatus.DELETED);
+            group = groupRepository.save(group);
+            return new ResponseBody<>(groupMapper.entityToGroupDto(group),
+                    ResponseBody.Status.SUCCESS, ResponseBody.Code.SUCCESS);
+        } catch (Exception e){
+            log.error("create group error!");
+            throw new RequestNotFoundException("Error");
+        }
     }
 
     @Override
-    public ResponseEntity<?> userViewGroup() {
-        return null;
+    public ResponseBody<?> userViewGroup(Long groupId) {
+        try{
+            Long userId  = authUtils.getUserFromAuthentication().getId();
+            GroupMember member = groupMemberRepository.searchGroupByRoleAndUserId(groupId, userId, null)
+                    .orElseThrow(()-> new RequestNotFoundException("member not found!"));
+            Group group = member.getGroup();
+            return new ResponseBody<>(groupMapper.entityToGroupDto(group),
+                    ResponseBody.Status.SUCCESS, ResponseBody.Code.SUCCESS);
+        } catch (Exception e){
+            log.error("create group error!");
+            throw new RequestNotFoundException("Error");
+        }
     }
 
     @Override

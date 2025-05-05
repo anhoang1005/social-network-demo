@@ -15,6 +15,8 @@ import java.util.Optional;
 @Repository
 public interface FriendshipRepository extends JpaRepository<Friendship, Long> {
 
+    Friendship findFriendshipByUser_idAndFriend_Id(Long userId, Long friendId);
+
     //Lay danh sach ban be cua 1 user
     @Query("""
                 SELECT f.friend FROM Friendship f 

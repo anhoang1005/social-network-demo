@@ -8,11 +8,11 @@ public interface GroupService {
 
     ResponseBody<?> userCreateGroup(CreateGroupRequest request);
 
-    ResponseEntity<?> userUpdateGroup();
+    ResponseBody<?> userUpdateGroup(CreateGroupRequest request);
 
-    ResponseEntity<?> userDeleteGroup();
+    ResponseBody<?> userDeleteGroup(Long groupId);
 
-    ResponseEntity<?> userViewGroup();
+    ResponseBody<?> userViewGroup(Long groupId);
 
     ResponseEntity<?> adminAcceptMember();
 

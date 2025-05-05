@@ -10,10 +10,6 @@ public interface UsersService {
 
     ResponseBody<?> usersChangeUserInfo(UserRegisterRequest req);
 
-    ResponseBody<?> usersChangeAvatar(MultipartFile file);
-
-    ResponseBody<?> usersChangeCoverImage(MultipartFile file);
-
     ResponseBody<?> usersGetUsersDetailResponse();
 
     ResponseBody<?> rootChangeRoleUsers(String userCode, boolean isAdmin);
@@ -21,4 +17,6 @@ public interface UsersService {
     ResponseBody<?> getListUsersAccount(int pageNumber, int pageSize);
 
     ResponseBody<?> getListUsersAccountByFullName(String fullName, int pageNumber, int pageSize);
+
+    ResponseBody<?> userGetOtherUserDetail(Long userId);
 }

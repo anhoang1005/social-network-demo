@@ -73,18 +73,24 @@ public class IConversationService implements ConversationService {
     public ResponseBody<?> userCreatePrivateConversation(String userCode) {
         try {
             String myUserCode = authUtils.getUserFromAuthentication().getUserCode();
-            Users me = usersRepository.findUsersByUserCode(myUserCode)
-                    .orElseThrow(()-> new RequestNotFoundException("user not found!"));
-            Users you = usersRepository.findUsersByUserCode(userCode)
-                    .orElseThrow(()-> new RequestNotFoundException("user not found!"));
-            Conversation conversation = new Conversation();
-            conversation.setActive(true);
-            conversation.setType(Conversation.ConversationType.PRIVATE);
-            ConversationMember meMember = new ConversationMember(conversation, me, false);
-            ConversationMember youMember = new ConversationMember(conversation, you, false);
-            conversation.setMembers(Set.of(meMember, youMember));
-            conversationRepository.save(conversation);
-            return new ResponseBody<>("");
+            Conversation conversation = conversationRepository.findPrivateConversationBetween(userCode, myUserCode)
+                    .orElse(null);
+            if(conversation!= null){
+                return new ResponseBody<>(conversation.getId());
+            } else{
+                Users me = usersRepository.findUsersByUserCode(myUserCode)
+                        .orElseThrow(()-> new RequestNotFoundException("user not found!"));
+                Users you = usersRepository.findUsersByUserCode(userCode)
+                        .orElseThrow(()-> new RequestNotFoundException("user not found!"));
+                conversation = new Conversation();
+                conversation.setActive(true);
+                conversation.setType(Conversation.ConversationType.PRIVATE);
+                ConversationMember meMember = new ConversationMember(conversation, me, false);
+                ConversationMember youMember = new ConversationMember(conversation, you, false);
+                conversation.setMembers(Set.of(meMember, youMember));
+                conversationRepository.save(conversation);
+                return new ResponseBody<>(conversation.getId());
+            }
         } catch (Exception e){
             log.error("Create chat error! Error: {}", e.getMessage());
             throw new RequestNotFoundException("ERROR");

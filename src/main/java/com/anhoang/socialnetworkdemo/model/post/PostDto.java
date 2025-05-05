@@ -26,6 +26,8 @@ public class PostDto {
     private Post.PostType postType;
     @JsonProperty("post_name")
     private String postName;
+    @JsonProperty("user_id")
+    private Long userId;
     @JsonProperty("user_code")
     private String userCode;
     @JsonProperty("content")

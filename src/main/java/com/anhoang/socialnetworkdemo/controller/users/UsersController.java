@@ -5,7 +5,6 @@ import com.anhoang.socialnetworkdemo.service.UsersService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 @CrossOrigin("*")
 @RestController
@@ -17,6 +16,12 @@ public class UsersController {
     public ResponseEntity<?> userGetUserDetailApi(){
         return ResponseEntity.ok(usersService.usersGetUsersDetailResponse());
     }
+
+    @GetMapping("/api/user/users/other-detail/{user_id}")
+    public ResponseEntity<?> userGetOtherUserDetailApi(@PathVariable("user_id") Long userId){
+        return ResponseEntity.ok(usersService.userGetOtherUserDetail(userId));
+    }
+
 
     @PutMapping("/api/user/users/change-password")
     public ResponseEntity<?> userChangePasswordApi(

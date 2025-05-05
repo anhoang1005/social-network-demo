@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface GroupMemberRepository extends JpaRepository<GroupMember, Long> {
 
@@ -15,4 +17,13 @@ public interface GroupMemberRepository extends JpaRepository<GroupMember, Long> 
     GroupMember getAdminMember(@Param("groupId") Long groupId);
 
     Long countGroupMemberByGroup_Id(Long groupId);
+
+    @Query(value = "select m from GroupMember m " +
+            "where m.group.id = :groupId " +
+            "and  m.user.id = :userId " +
+            "and (:role is null or m.role = :role) ")
+    Optional<GroupMember> searchGroupByRoleAndUserId(@Param("groupId") Long groupId,
+                                                     @Param("userId") Long userId,
+                                                     @Param("role")GroupMember.Role role);
+
 }
