@@ -18,7 +18,7 @@ public interface PostService {
     ResponseBody<?> userDeletePost(Long postId);
     ResponseBody<?> userSharedPost(PostRequest req);
     ResponseBody<?> userGetTheirListPost(String postHashtag, int pageNumber, int pageSize);
-    ResponseBody<?> userGetUserPostOther(String userCode, String hashTag, int pageNumber, int pageSize);
+    ResponseBody<?> userGetUserPostOther(Long userId, String hashTag, int pageNumber, int pageSize);
     ResponseBody<?> adminActivePost(Long postId, Post.Status status);
     ResponseBody<?> useReactionPost(Long postId, PostReaction.Reaction reaction);
 

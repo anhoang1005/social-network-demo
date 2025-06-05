@@ -75,11 +75,11 @@ public class PostController {
     }
 
     @GetMapping("/api/user/post/user-post")
-    public ResponseEntity<?> userSharedPostApi(@RequestParam("user_code") String userCode,
+    public ResponseEntity<?> userSharedPostApi(@RequestParam("user_id") Long userId,
                                                @RequestParam(name = "hashtag", required = false) String hashTag,
                                                @RequestParam("page_number") int pageNumber,
                                                @RequestParam("page_size") int pageSize){
-        return ResponseEntity.ok(postService.userGetUserPostOther(userCode, hashTag, pageNumber, pageSize));
+        return ResponseEntity.ok(postService.userGetUserPostOther(userId, hashTag, pageNumber, pageSize));
     }
 
     @PutMapping("/api/admin/post/active")

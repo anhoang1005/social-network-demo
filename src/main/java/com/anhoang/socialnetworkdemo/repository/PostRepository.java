@@ -36,10 +36,10 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @Query(value = "select p from Post p " +
             "where p.status = :status " +
             "and p.visibility = :visibility " +
-            "and p.users.userCode = :userCode " +
+            "and p.users.id = :userId " +
             "and (:hashtag is null or :hashtag member of p.hashtags)")
     Page<Post> userGetUserPostOther(@Param("status") Post.Status status,
-                                    @Param("userCode") String userCode,
+                                    @Param("userId") Long userId,
                                     @Param("hashtag") Hashtag hashTag,
                                     @Param("visibility") Post.Visibility visibility,
                                     Pageable pageable);

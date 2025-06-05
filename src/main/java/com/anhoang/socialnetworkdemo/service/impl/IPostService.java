@@ -308,13 +308,13 @@ public class IPostService implements PostService {
 
     @Override
     @Transactional
-    public ResponseBody<?> userGetUserPostOther(String userCode, String hashTag, int pageNumber, int pageSize) {
+    public ResponseBody<?> userGetUserPostOther(Long userId, String hashTag, int pageNumber, int pageSize) {
         try{
             String myUserCode = authUtils.getUserFromAuthentication().getUserCode();
             Pageable pageable = PageRequest.of(pageNumber - 1, pageSize, Sort.by(Sort.Order.desc("createdAt")));
             Hashtag postHashTag = hashTagRepository.findHashtagByName(hashTag);
             Page<Post> page = postRepository.userGetUserPostOther(
-                    Post.Status.NORMAL, userCode, postHashTag, Post.Visibility.PUBLIC, pageable);
+                    Post.Status.NORMAL, userId, postHashTag, Post.Visibility.PUBLIC, pageable);
             List<PostDto> listPost = page.stream()
                     .map(post -> postMapper.entityToPostDto(post, myUserCode))
                     .collect(Collectors.toList());
